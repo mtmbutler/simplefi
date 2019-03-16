@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Bank Detail</h2>
+    {% for name, value in object.get_fields.items %}
+    <p>
+        <b>{{ name }}:</b>
+        <span>{{ value|default:"Not available" }}</span>
+    </p>
+    {% endfor %}
+    <ul>
+        <li><a href="{% url 'budget:bank-update' bank.id %}">Update</a></li>
+        <li><a href="{% url 'budget:bank-delete' bank.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:bank-list' %}">Back</a></li>
+    </ul>
+    <b>Accounts:</b>
+    {% for a in bank.account_set.all %}
+        <li><a href="{% url 'budget:account-detail' a.id %}">{{ a }}</a></li>
+    {% endfor %}
+{% endblock %}

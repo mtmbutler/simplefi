@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Subcategory Detail</h2>
+    <p>
+        <b>Name:</b>
+        <span>{{ subcategory.name }}</span>
+    </p>
+    <p>
+        <b>Category:</b>
+        <span><a href="{% url 'budget:category-detail' subcategory.category.id %}">{{ subcategory.category_id }}</a></span>
+    </p>
+    <ul>
+        <li><a href="{% url 'budget:subcategory-update' subcategory.id %}">Update</a></li>
+        <li><a href="{% url 'budget:subcategory-delete' subcategory.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:subcategory-list' %}">Back</a></li>
+    </ul>
+    <b>Transactions:</b>
+    {% for t in subcategory.transaction_set.all %}
+        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
+    {% endfor %}
+{% endblock %}

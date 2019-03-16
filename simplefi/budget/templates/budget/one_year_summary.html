@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load extras %}
+
+{% block content %}
+    <h2>One-Year Summary</h2>
+    <table>
+        <tr>
+            <th></th>
+            {% for header in columns %}
+            <th>{{ header }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td colspan="16" class="divider"><hr /></td>
+        </tr>
+        {% for index, row in data.items %}
+        <tr>
+            <th>
+                {% if index in categories and index %}
+                    <a href="{% url 'budget:category-detail' categories|get_item:index %}">{{ index }}</a>
+                {% else %}
+                    {{ index }}
+                {% endif %}
+            </th>
+            {% for cell in row %}
+            <td align="right">{{ cell }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

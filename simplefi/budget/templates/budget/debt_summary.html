@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load extras %}
+
+{% block content %}
+    <h2>Debt Summary</h2>
+    <table>
+        <tr>
+            <th></th>
+            {% for header in columns %}
+                <th>
+                {% if header in accounts %}
+                    <a href="{% url 'budget:account-detail' accounts|get_item:header %}">{{ header }}</a>
+                {% else %}
+                    {{ header }}
+                {% endif %}
+                </th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td colspan="16" class="divider"><hr /></td>
+        </tr>
+        {% for index, row in data.items %}
+        <tr>
+            <th>
+                {{ index }}
+            </th>
+            {% for cell in row %}
+            <td align="right">{{ cell }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

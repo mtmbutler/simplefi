@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load extras %}
+
+{% block content %}
+    <h2>Category Detail</h2>
+    <p>
+        <b>Name:</b>
+        <span>{{ category.name }}</span>
+    </p>
+    <p>
+        <b>Budget:</b>
+        <span>{{ category.budget }}</span>
+    </p>
+    <ul>
+        <li><a href="{% url 'budget:category-update' category.id %}">Update</a></li>
+        <li><a href="{% url 'budget:category-delete' category.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:category-list' %}">Back</a></li>
+    </ul>
+    {% if subcategories %}
+    <b>One-Year Summary</b>
+    <table>
+        <tr>
+            <th></th>
+            {% for header in columns %}
+            <th>{{ header }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td colspan="16" class="divider"><hr /></td>
+        </tr>
+        {% for index, row in data.items %}
+        <tr>
+            <th>
+                {% if index in subcategories and index %}
+                    <a href="{% url 'budget:subcategory-detail' subcategories|get_item:index %}">{{ index }}</a>
+                {% else %}
+                    {{ index }}
+                {% endif %}
+            </th>
+            {% for cell in row %}
+            <td align="right">{{ cell }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+    <b>Transactions:</b>
+    {% for t in category.transaction_set.all %}
+        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
+    {% endfor %}
+{% endblock %}

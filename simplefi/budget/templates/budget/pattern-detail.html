@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Pattern Detail</h2>
+    <p>
+        <b>Pattern:</b>
+        <span>{{ pattern.pattern }}</span>
+    </p>
+    <p>
+        <b>Category:</b>
+        <span>{{ pattern.category }}</span>
+    </p>
+    <p>
+        <b>Subcategory:</b>
+        <span>{{ pattern.subcategory_id }}</span>
+    </p>
+    <ul>
+        <li><a href="{% url 'budget:pattern-update' pattern.id %}">Update</a></li>
+        <li><a href="{% url 'budget:pattern-delete' pattern.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:pattern-list' %}">Back</a></li>
+    </ul>
+    <b>Transactions:</b>
+    {% for t in pattern.transaction_set.all %}
+        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Add upload</h2>
+    <form action="" method="POST" class="post-form" enctype="multipart/form-data">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="save btn btn-default">Save</button>
+    </form>
+    <ul>
+        <li><a href="{% url 'budget:upload-list' %}">Back</a></li>
+    </ul>
+{% endblock %}

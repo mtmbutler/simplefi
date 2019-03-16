@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Transactions</h2>
+    <ul>
+        {% for transaction in object_list %}
+            <li><a href="{% url 'budget:transaction-detail' transaction.id %}">{{ transaction }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Update statement</h2>
+    <form method="post">{% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Update">
+    </form>
+    <ul>
+        <li><a href="{% url 'budget:statement-delete' statement.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:statement-add' %}">Add New</a></li>
+        <li><a href="{% url 'budget:account-detail' statement.account.id %}">Back</a></li>
+    </ul>
+{% endblock %}

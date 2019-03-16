@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <h2>Upload Detail</h2>
+    <p>
+        <b>Account:</b>
+        <span><a href="{% url 'budget:account-detail' upload.account.id %}">{{ upload.account }}</a></span>
+    </p>
+    <p>
+        <b>Upload time:</b>
+        <span>{{ upload.upload_time }}</span>
+    </p>
+    <p>
+        <b>Upload time:</b>
+        <span>{{ upload.upload_time }}</span>
+    </p>
+    <p>
+        <b>CSV:</b>
+        <span><a href="{{ upload.csv.url }}"><button class="btn btn-outline-warning mr-3">View</button></a></span>
+    </p>
+
+    <ul>
+        <li><a href="{% url 'budget:upload-delete' upload.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:upload-list' %}">Back</a></li>
+    </ul>
+    <b>Transactions:</b>
+    {% for t in upload.transaction_set.all %}
+        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
+    {% endfor %}
+{% endblock %}

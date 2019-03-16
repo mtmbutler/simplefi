@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Accounts</h2>
+    <ul>
+        {% for account in object_list %}
+            <li><a href="{% url 'budget:account-detail' account.id %}">{{ account.name }}</a></li>
+        {% endfor %}
+        <li><a href="{% url 'budget:account-add' %}">Add New</a></li>
+    </ul>
+{% endblock %}

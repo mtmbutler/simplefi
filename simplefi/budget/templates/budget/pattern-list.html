@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {# -- BUTTONS -- #}
+    <p><b><a href="{% url 'budget:declassify' %}">
+            Declassify All
+        </a> |
+
+        <a href="{% url 'budget:classify' %}">
+            Classify
+        </a> |
+        <a href="{% url 'budget:pattern-add' %}">
+            Add New Pattern
+        </a>
+    </b></p>
+
+    {# -- UNMATCHED TRANSACTIONS -- #}
+    <p><b>Unmatched transactions: {{ num_unmatched_transactions }}</b></p>
+    <ul>
+        {% for t in unmatched_transaction_list %}
+            <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
+        {% endfor %}
+    </ul>
+
+    {# -- PATTERN LIST -- #}
+    <h2>Patterns</h2>
+    <ul>
+        {% for pattern in object_list %}
+            <li><a href="{% url 'budget:pattern-detail' pattern.id %}">{{ pattern }}</a></li>
+        {% endfor %}
+        <li><a href="{% url 'budget:pattern-add' %}">Add New</a></li>
+    </ul>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Delete account</h2>
+    <form method="POST" class="post-form">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="save btn btn-default">Confirm</button>
+    </form>
+    <ul>
+        <li><a href="{% url 'budget:account-detail' account.id %}">Back</a></li>
+    </ul>
+{% endblock %}

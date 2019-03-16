@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Transaction Detail</h2>
+    <p>
+        <b>Upload batch:</b>
+        <span><a href="{% url 'budget:upload-detail' transaction.upload_id.id %}">{{ transaction.upload_id }}</a></span>
+    </p>
+    <p>
+        <b>Account:</b>
+        <span><a href="{% url 'budget:account-detail' transaction.account.id %}">{{ transaction.account_id }}</a></span>
+    </p>
+    <p>
+        <b>Date:</b>
+        <span>{{ transaction.date }}</span>
+    </p>
+    <p>
+        <b>Amount:</b>
+        <span>{{ transaction.amount }}</span>
+    </p>
+    <p>
+        <b>Description:</b>
+        <span>{{ transaction.description }}</span>
+    </p>
+    {% if transaction.category %}
+    <p>
+        <b>Category:</b>
+        <span><a href="{% url 'budget:category-detail' transaction.category.id %}">{{ transaction.category }}</a></span>
+    </p>
+    {% endif %}
+    {% if transaction.subcategory %}
+    <p>
+        <b>Subcategory:</b>
+        <span><a href="{% url 'budget:subcategory-detail' transaction.subcategory.id %}">{{ transaction.subcategory }}</a></span>
+    </p>
+    {% endif %}
+    {% if transaction.pattern %}
+    <p>
+        <b>Classified by pattern:</b>
+        <span><a href="{% url 'budget:pattern-detail' transaction.pattern.id %}">{{ transaction.pattern }}</a></span>
+    </p>
+    {% endif %}
+    <ul>
+        <li><a href="{% url 'budget:transaction-delete' transaction.id %}">Delete</a></li>
+        <li><a href="{% url 'budget:transaction-list' %}">Back</a></li>
+    </ul>
+{% endblock %}
