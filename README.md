@@ -11,17 +11,9 @@
 
 # TODO
 
-- Draft pages
-  - Login
-  - Sidebar navigation
-  - Manage data and classification rules
-  - Summarize data
-  - Manage debt
-- Draft database structure with pages
+- Set up authentication
+- Write tests
+- Write docs
+- Set up data I/O capabilities for privacy
 - Build a React.js concept
-- Convert existing code to Django
 - Build REST API
-- Deploy Docker images to AWS
-  - Django + React.js
-  - Jenkins
-  - Nginx

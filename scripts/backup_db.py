@@ -35,6 +35,7 @@ p = subprocess.Popen([
     '--format=yaml',
     '--indent=2',
     '--exclude=auth',
+    '--exclude=contenttypes',
     '--verbosity=1',
     f'--output={out_path}'
 ])

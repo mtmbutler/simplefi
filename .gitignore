@@ -2,6 +2,7 @@
 .idea/*
 config.yaml
 simplefi/media/*
+simplefi/fixtures/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
