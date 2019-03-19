@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from django.utils import timezone
 
 from .models import Account, Category, Statement, Transaction
 
@@ -71,6 +72,9 @@ def debt_summary():
     month = earliest.month
     year = earliest.year
 
+    # Get today
+    now = timezone.now()
+
     # Start loop
     rows = []
     count = 0
@@ -82,10 +86,15 @@ def debt_summary():
             try:  # See if we have the actual statement value
                 row[a.name] = a.statement_set.get(
                     year=year, month=month).balance
-            except Statement.DoesNotExist:  # Forecast the value instead
-                prev_bal = rows[-1][a.name] if rows else a.balance
-                row[a.name] = a.forecast_next(bal=prev_bal)
-                min_pay[a.name] = a.min_pay(bal=prev_bal)
+            except Statement.DoesNotExist:
+                # If it's before this month, set to balance
+                if year < now.year or (month < now.month and year == now.year):
+                    row[a.name] = a.statement_set.order_by('year', 'month').first().balance
+                else:
+                    # Forecast the value instead
+                    prev_bal = rows[-1][a.name] if rows else a.balance
+                    row[a.name] = a.forecast_next(bal=prev_bal)
+                    min_pay[a.name] = a.min_pay(bal=prev_bal)
 
         # Spend the debt budget
         if len(min_pay) == accs.count():

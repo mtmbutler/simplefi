@@ -1,5 +1,6 @@
 import calendar
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
@@ -15,75 +16,75 @@ def index(request):
 
 
 # -- BANKS --
-class BankList(generic.ListView):
+class BankList(LoginRequiredMixin, generic.ListView):
     model = models.Bank
     template_name = 'budget/bank-list.html'
 
 
-class BankView(generic.DetailView):
+class BankView(LoginRequiredMixin, generic.DetailView):
     model = models.Bank
     template_name = 'budget/bank-detail.html'
 
 
-class BankCreate(CreateView):
+class BankCreate(LoginRequiredMixin, CreateView):
     model = models.Bank
     fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
     template_name = 'budget/bank-add.html'
 
 
-class BankUpdate(UpdateView):
+class BankUpdate(LoginRequiredMixin, UpdateView):
     model = models.Bank
     fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
     template_name = 'budget/bank-update.html'
 
 
-class BankDelete(DeleteView):
+class BankDelete(LoginRequiredMixin, DeleteView):
     model = models.Bank
     success_url = reverse_lazy('budget:bank-list')
     template_name = 'budget/bank-delete.html'
 
 
 # -- ACCOUNT HOLDERS --
-class AccountHolderList(generic.ListView):
+class AccountHolderList(LoginRequiredMixin, generic.ListView):
     model = models.AccountHolder
     template_name = 'budget/accountholder-list.html'
 
 
-class AccountHolderView(generic.DetailView):
+class AccountHolderView(LoginRequiredMixin, generic.DetailView):
     model = models.AccountHolder
     template_name = 'budget/accountholder-detail.html'
 
 
-class AccountHolderCreate(CreateView):
+class AccountHolderCreate(LoginRequiredMixin, CreateView):
     model = models.AccountHolder
     fields = ['name']
     template_name = 'budget/accountholder-add.html'
 
 
-class AccountHolderUpdate(UpdateView):
+class AccountHolderUpdate(LoginRequiredMixin, UpdateView):
     model = models.AccountHolder
     fields = ['name']
     template_name = 'budget/accountholder-update.html'
 
 
-class AccountHolderDelete(DeleteView):
+class AccountHolderDelete(LoginRequiredMixin, DeleteView):
     model = models.AccountHolder
     success_url = reverse_lazy('budget:accountholder-list')
     template_name = 'budget/accountholder-delete.html'
 
 
 # -- ACCOUNTS --
-class AccountList(generic.ListView):
+class AccountList(LoginRequiredMixin, generic.ListView):
     model = models.Account
     template_name = 'budget/account-list.html'
 
 
-class AccountView(generic.DetailView):
+class AccountView(LoginRequiredMixin, generic.DetailView):
     model = models.Account
     template_name = 'budget/account-detail.html'
 
 
-class AccountCreate(CreateView):
+class AccountCreate(LoginRequiredMixin, CreateView):
     model = models.Account
     fields = ['name', 'bank', 'holder', 'statement_date', 'date_opened',
               'annual_fee', 'interest_rate', 'credit_line',
@@ -91,7 +92,7 @@ class AccountCreate(CreateView):
     template_name = 'budget/account-add.html'
 
 
-class AccountUpdate(UpdateView):
+class AccountUpdate(LoginRequiredMixin, UpdateView):
     model = models.Account
     fields = ['name', 'bank', 'holder', 'statement_date', 'date_opened',
               'annual_fee', 'interest_rate', 'credit_line',
@@ -99,43 +100,43 @@ class AccountUpdate(UpdateView):
     template_name = 'budget/account-update.html'
 
 
-class AccountDelete(DeleteView):
+class AccountDelete(LoginRequiredMixin, DeleteView):
     model = models.Account
     success_url = reverse_lazy('budget:account-list')
     template_name = 'budget/account-delete.html'
 
 
 # -- STATEMENTS --
-class StatementCreate(CreateView):
+class StatementCreate(LoginRequiredMixin, CreateView):
     model = models.Statement
     fields = ['account', 'month', 'year', 'balance']
     template_name = 'budget/statement-add.html'
 
 
-class StatementUpdate(UpdateView):
+class StatementUpdate(LoginRequiredMixin, UpdateView):
     model = models.Statement
     fields = ['account', 'month', 'year', 'balance']
     template_name = 'budget/statement-update.html'
 
 
-class StatementDelete(DeleteView):
+class StatementDelete(LoginRequiredMixin, DeleteView):
     model = models.Statement
     success_url = reverse_lazy('budget:account-list')
     template_name = 'budget/statement-delete.html'
 
 
 # -- UPLOADS --
-class UploadList(generic.ListView):
+class UploadList(LoginRequiredMixin, generic.ListView):
     model = models.Upload
     template_name = 'budget/upload-list.html'
 
 
-class UploadView(generic.DetailView):
+class UploadView(LoginRequiredMixin, generic.DetailView):
     model = models.Upload
     template_name = 'budget/upload-detail.html'
 
 
-class UploadCreate(CreateView):
+class UploadCreate(LoginRequiredMixin, CreateView):
     model = models.Upload
     fields = ['account', 'csv']
     template_name = 'budget/upload-add.html'
@@ -150,7 +151,7 @@ class UploadCreate(CreateView):
             return reverse('budget:upload-list')
 
 
-class UploadDelete(DeleteView):
+class UploadDelete(LoginRequiredMixin, DeleteView):
     model = models.Upload
     template_name = 'budget/upload-delete.html'
 
@@ -159,12 +160,12 @@ class UploadDelete(DeleteView):
 
 
 # -- CATEGORIES --
-class CategoryList(generic.ListView):
+class CategoryList(LoginRequiredMixin, generic.ListView):
     model = models.Category
     template_name = 'budget/category-list.html'
 
 
-class CategoryView(generic.DetailView):
+class CategoryView(LoginRequiredMixin, generic.DetailView):
     model = models.Category
     template_name = 'budget/category-detail.html'
 
@@ -201,55 +202,55 @@ class CategoryView(generic.DetailView):
         return context
 
 
-class CategoryCreate(CreateView):
+class CategoryCreate(LoginRequiredMixin, CreateView):
     model = models.Category
     fields = ['name', 'budget']
     template_name = 'budget/category-add.html'
 
 
-class CategoryUpdate(UpdateView):
+class CategoryUpdate(LoginRequiredMixin, UpdateView):
     model = models.Category
     fields = ['name', 'budget']
     template_name = 'budget/category-update.html'
 
 
-class CategoryDelete(DeleteView):
+class CategoryDelete(LoginRequiredMixin, DeleteView):
     model = models.Category
     success_url = reverse_lazy('budget:category-list')
     template_name = 'budget/category-delete.html'
 
 
 # -- SUBCATEGORIES --
-class SubcategoryList(generic.ListView):
+class SubcategoryList(LoginRequiredMixin, generic.ListView):
     model = models.Subcategory
     template_name = 'budget/subcategory-list.html'
 
 
-class SubcategoryView(generic.DetailView):
+class SubcategoryView(LoginRequiredMixin, generic.DetailView):
     model = models.Subcategory
     template_name = 'budget/subcategory-detail.html'
 
 
-class SubcategoryCreate(CreateView):
+class SubcategoryCreate(LoginRequiredMixin, CreateView):
     model = models.Subcategory
     fields = ['name', 'category']
     template_name = 'budget/subcategory-add.html'
 
 
-class SubcategoryUpdate(UpdateView):
+class SubcategoryUpdate(LoginRequiredMixin, UpdateView):
     model = models.Subcategory
     fields = ['name', 'category']
     template_name = 'budget/subcategory-update.html'
 
 
-class SubcategoryDelete(DeleteView):
+class SubcategoryDelete(LoginRequiredMixin, DeleteView):
     model = models.Subcategory
     success_url = reverse_lazy('budget:subcategory-list')
     template_name = 'budget/subcategory-delete.html'
 
 
 # -- PATTERNS --
-class PatternClassify(generic.RedirectView):
+class PatternClassify(LoginRequiredMixin, generic.RedirectView):
     pattern_name = 'budget:pattern-list'
 
     def get_redirect_url(self, *args, **kwargs):
@@ -259,7 +260,7 @@ class PatternClassify(generic.RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class PatternDeclassify(generic.RedirectView):
+class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
     pattern_name = 'budget:pattern-list'
 
     def get_redirect_url(self, *args, **kwargs):
@@ -268,7 +269,7 @@ class PatternDeclassify(generic.RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class PatternList(generic.ListView):
+class PatternList(LoginRequiredMixin, generic.ListView):
     model = models.Pattern
     template_name = 'budget/pattern-list.html'
 
@@ -280,12 +281,12 @@ class PatternList(generic.ListView):
         return context
 
 
-class PatternView(generic.DetailView):
+class PatternView(LoginRequiredMixin, generic.DetailView):
     model = models.Pattern
     template_name = 'budget/pattern-detail.html'
 
 
-class PatternCreate(CreateView):
+class PatternCreate(LoginRequiredMixin, CreateView):
     model = models.Pattern
     fields = ['pattern', 'subcategory']
     template_name = 'budget/pattern-add.html'
@@ -304,30 +305,30 @@ class PatternCreate(CreateView):
         return reverse('budget:pattern-add')
 
 
-class PatternUpdate(UpdateView):
+class PatternUpdate(LoginRequiredMixin, UpdateView):
     model = models.Pattern
     fields = ['pattern', 'subcategory']
     template_name = 'budget/pattern-update.html'
 
 
-class PatternDelete(DeleteView):
+class PatternDelete(LoginRequiredMixin, DeleteView):
     model = models.Pattern
     success_url = reverse_lazy('budget:pattern-list')
     template_name = 'budget/pattern-delete.html'
 
 
 # -- TRANSACTIONS --
-class TransactionList(generic.ListView):
+class TransactionList(LoginRequiredMixin, generic.ListView):
     model = models.Transaction
     template_name = 'budget/transaction-list.html'
 
 
-class TransactionView(generic.DetailView):
+class TransactionView(LoginRequiredMixin, generic.DetailView):
     model = models.Transaction
     template_name = 'budget/transaction-detail.html'
 
 
-class TransactionDelete(DeleteView):
+class TransactionDelete(LoginRequiredMixin, DeleteView):
     model = models.Transaction
     template_name = 'budget/transaction-delete.html'
 
@@ -336,7 +337,7 @@ class TransactionDelete(DeleteView):
 
 
 # -- SUMMARIES --
-class OneYearSummary(generic.TemplateView):
+class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
     template_name = 'budget/one_year_summary.html'
 
     @staticmethod
@@ -363,7 +364,7 @@ class OneYearSummary(generic.TemplateView):
         return context
 
 
-class DebtSummary(generic.TemplateView):
+class DebtSummary(LoginRequiredMixin, generic.TemplateView):
     template_name = 'budget/debt_summary.html'
 
     @staticmethod
