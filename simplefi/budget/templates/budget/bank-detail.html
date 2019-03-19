@@ -2,12 +2,16 @@
 
 {% block content %}
     <h2>Bank Detail</h2>
-    {% for name, value in object.get_fields.items %}
     <p>
-        <b>{{ name }}:</b>
-        <span>{{ value|default:"Not available" }}</span>
+        <b>Name:</b>
+        <span>{{ object.name }}</span>
+    <br>        <b>Date Header:</b>
+        <span>{{ object.date_col_name }}</span>
+    <br>        <b>Amount Header:</b>
+        <span>{{ object.amt_col_name }}</span>
+    <br>        <b>Description Header:</b>
+        <span>{{ object.desc_col_name }}</span>
     </p>
-    {% endfor %}
     <ul>
         <li><a href="{% url 'budget:bank-update' bank.id %}">Update</a></li>
         <li><a href="{% url 'budget:bank-delete' bank.id %}">Delete</a></li>

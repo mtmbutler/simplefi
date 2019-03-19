@@ -1,6 +1,7 @@
 import datetime
 
 import pandas as pd
+from django.conf import settings
 from django.db import models, IntegrityError
 from django.urls import reverse
 from django.utils import timezone
@@ -29,36 +30,22 @@ class TransactionManager(models.Manager):
         )
 
 
-class ExplicitFieldsModel(models.Model):
-    class Meta:
-        abstract = True
-
-    def include(self):
-        fields_to_include = [f.name for f in self._meta.get_fields()]
-        return fields_to_include
-
-    def get_fields(self):
-        return {
-            f.verbose_name: self.__dict__[f.name]
-            for f in self._meta.get_fields()
-            if f.name in self.include()
-        }
-
-
-class Bank(ExplicitFieldsModel):
-    name = models.CharField('Name', unique=True, max_length=255)
+class Bank(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    name = models.CharField('Name', max_length=255)
     date_col_name = models.CharField('Date Header', max_length=255)
     amt_col_name = models.CharField('Amount Header', max_length=255)
     desc_col_name = models.CharField('Description Header', max_length=255)
+
+    class Meta:
+        unique_together = ('user', 'name')
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
         return reverse('budget:bank-detail', kwargs={'pk': self.pk})
-
-    def include(self):
-        return ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
 
 
 class AccountHolder(models.Model):
