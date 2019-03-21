@@ -61,8 +61,8 @@ class AccountHolder(models.Model):
 class Account(models.Model):
     name = models.CharField('Name', unique=True, max_length=255)
     bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
-    holder = models.ForeignKey(AccountHolder, to_field='name',
-                               on_delete=models.CASCADE, null=True)
+    holder = models.ForeignKey(AccountHolder, on_delete=models.CASCADE,
+                               null=True)
     statement_date = models.PositiveSmallIntegerField(
         'Statement Date', default=1,
         help_text="The numbered day of each month that your statement posts."
@@ -117,7 +117,8 @@ class Account(models.Model):
 
 
 class Statement(models.Model):
-    account = models.ForeignKey(Account, to_field='name', on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, to_field='name', on_delete=models.CASCADE, related_name='statement_legacy')
+    account_new = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     year = models.PositiveSmallIntegerField('Year', default=0)
     month = models.PositiveSmallIntegerField('Month', default=0)
     balance = models.DecimalField('Balance', decimal_places=2, max_digits=9)
@@ -139,7 +140,8 @@ class Statement(models.Model):
 
 class Upload(models.Model):
     upload_time = models.DateTimeField('Uploaded', auto_now_add=True)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, to_field='name')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, to_field='name', related_name='upload_legacy')
+    account_new = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     csv = models.FileField(upload_to='csvs')
 
     def __str__(self):
@@ -194,7 +196,8 @@ class Category(models.Model):
 
 
 class Subcategory(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, to_field='name')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, to_field='name', related_name='subcat_legacy')
+    category_new = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
     name = models.CharField('Name', unique=True, max_length=255)
 
     class Meta:
@@ -209,7 +212,8 @@ class Subcategory(models.Model):
 
 class Pattern(models.Model):
     pattern = models.CharField('Match Pattern', unique=True, max_length=255)
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, to_field='name')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, to_field='name', related_name='pattern_legacy')
+    subcategory_new = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return self.pattern
@@ -234,13 +238,17 @@ class Pattern(models.Model):
 
 class Transaction(models.Model):
     upload_id = models.ForeignKey(Upload, on_delete=models.CASCADE)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, to_field='name')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, to_field='name', related_name='transacc_legacy')
+    account_new = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     date = models.DateField('Transaction Date')
     amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
     description = models.TextField('Description')
-    pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True, to_field='pattern')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, to_field='name')
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, to_field='name')
+    pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True, to_field='pattern', related_name='transpat_legacy')
+    pattern_new = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, to_field='name', related_name='transcat_legacy')
+    category_new = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, to_field='name', related_name='transsub_legacy')
+    subcategory_new = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
     objects = TransactionManager()
 
     class Meta:
