@@ -49,7 +49,12 @@ class Bank(models.Model):
 
 
 class AccountHolder(models.Model):
-    name = models.CharField('Name', max_length=255, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    name = models.CharField('Name', max_length=255)
+
+    class Meta:
+        unique_together = ('user', 'name')
 
     def __str__(self):
         return self.name
@@ -59,7 +64,9 @@ class AccountHolder(models.Model):
 
 
 class Account(models.Model):
-    name = models.CharField('Name', unique=True, max_length=255)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    name = models.CharField('Name', max_length=255)
     bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
     holder = models.ForeignKey(AccountHolder, on_delete=models.CASCADE,
                                null=True)
@@ -79,6 +86,9 @@ class Account(models.Model):
     min_pay_dlr = models.DecimalField('Minimum Payment ($)', decimal_places=2,
                                       max_digits=9, default=0.)
     priority = models.PositiveSmallIntegerField('Priority', default=0)
+
+    class Meta:
+        unique_together = ('user', 'name')
 
     def __str__(self):
         return self.name
@@ -117,6 +127,8 @@ class Account(models.Model):
 
 
 class Statement(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     year = models.PositiveSmallIntegerField('Year', default=0)
     month = models.PositiveSmallIntegerField('Month', default=0)
@@ -124,7 +136,7 @@ class Statement(models.Model):
 
     class Meta:
         ordering = ['-year', '-month']
-        unique_together = ('account', 'year', 'month')
+        unique_together = ('user', 'account', 'year', 'month')
 
     def __str__(self):
         return f"{self.date.strftime('%b %Y')}: {self.balance}"
@@ -138,6 +150,8 @@ class Statement(models.Model):
 
 
 class Upload(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
     upload_time = models.DateTimeField('Uploaded', auto_now_add=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     csv = models.FileField(upload_to='csvs')
@@ -183,8 +197,13 @@ class Upload(models.Model):
 
 
 class Category(models.Model):
-    name = models.CharField('Name', unique=True, max_length=255)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    name = models.CharField('Name', max_length=255)
     budget = models.DecimalField('Monthly Target', decimal_places=2, max_digits=9, default=0.)
+
+    class Meta:
+        unique_together = ('user', 'name')
 
     def __str__(self):
         return self.name
@@ -194,10 +213,13 @@ class Category(models.Model):
 
 
 class Subcategory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
-    name = models.CharField('Name', unique=True, max_length=255)
+    name = models.CharField('Name', max_length=255)
 
     class Meta:
+        unique_together = ('user', 'category', 'name')
         ordering = ['category_id', 'name']
 
     def __str__(self):
@@ -208,8 +230,13 @@ class Subcategory(models.Model):
 
 
 class Pattern(models.Model):
-    pattern = models.CharField('Match Pattern', unique=True, max_length=255)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    pattern = models.CharField('Match Pattern', max_length=255)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        unique_together = ('user', 'pattern')
 
     def __str__(self):
         return self.pattern
@@ -233,6 +260,8 @@ class Pattern(models.Model):
 
 
 class Transaction(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
     upload_id = models.ForeignKey(Upload, on_delete=models.CASCADE)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     date = models.DateField('Transaction Date')
@@ -245,7 +274,7 @@ class Transaction(models.Model):
 
     class Meta:
         ordering = ['-date']
-        unique_together = ('account', 'date', 'amount', 'description')
+        unique_together = ('user', 'account', 'date', 'amount', 'description')
 
     def __str__(self):
         return f"{self.account} | {self.date} | {self.amount} | {self.description}"
