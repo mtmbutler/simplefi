@@ -30,9 +30,15 @@ class TransactionManager(models.Manager):
         )
 
 
-class Bank(models.Model):
+class UserDataModel(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
+
+
+class Bank(UserDataModel):
     name = models.CharField('Name', max_length=255)
     date_col_name = models.CharField('Date Header', max_length=255)
     amt_col_name = models.CharField('Amount Header', max_length=255)
@@ -48,9 +54,7 @@ class Bank(models.Model):
         return reverse('budget:bank-detail', kwargs={'pk': self.pk})
 
 
-class AccountHolder(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class AccountHolder(UserDataModel):
     name = models.CharField('Name', max_length=255)
 
     class Meta:
@@ -63,9 +67,7 @@ class AccountHolder(models.Model):
         return reverse('budget:accountholder-detail', kwargs={'pk': self.pk})
 
 
-class Account(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Account(UserDataModel):
     name = models.CharField('Name', max_length=255)
     bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
     holder = models.ForeignKey(AccountHolder, on_delete=models.CASCADE,
@@ -126,9 +128,7 @@ class Account(models.Model):
                    - self.min_pay(bal=bal), 0)
 
 
-class Statement(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Statement(UserDataModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     year = models.PositiveSmallIntegerField('Year', default=0)
     month = models.PositiveSmallIntegerField('Month', default=0)
@@ -149,9 +149,7 @@ class Statement(models.Model):
         return datetime.date(year=self.year, month=self.month, day=1)
 
 
-class Upload(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Upload(UserDataModel):
     upload_time = models.DateTimeField('Uploaded', auto_now_add=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     csv = models.FileField(upload_to='csvs')
@@ -196,9 +194,7 @@ class Upload(models.Model):
         return True
 
 
-class Category(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Category(UserDataModel):
     name = models.CharField('Name', max_length=255)
     budget = models.DecimalField('Monthly Target', decimal_places=2, max_digits=9, default=0.)
 
@@ -212,9 +208,7 @@ class Category(models.Model):
         return reverse('budget:category-detail', kwargs={'pk': self.pk})
 
 
-class Subcategory(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Subcategory(UserDataModel):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
     name = models.CharField('Name', max_length=255)
 
@@ -229,9 +223,7 @@ class Subcategory(models.Model):
         return reverse('budget:subcategory-detail', kwargs={'pk': self.pk})
 
 
-class Pattern(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Pattern(UserDataModel):
     pattern = models.CharField('Match Pattern', max_length=255)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
 
@@ -259,9 +251,7 @@ class Pattern(models.Model):
         )
 
 
-class Transaction(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+class Transaction(UserDataModel):
     upload_id = models.ForeignKey(Upload, on_delete=models.CASCADE)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     date = models.DateField('Transaction Date')
