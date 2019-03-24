@@ -9,7 +9,7 @@
 - View monthly category summaries
 - Manage debt
 
-# TODO
+### TODO
 
 - Consolidate nav
     - Move bank creation to account creation

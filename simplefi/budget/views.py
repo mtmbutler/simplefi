@@ -1,6 +1,7 @@
 import calendar
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
@@ -16,6 +17,10 @@ def index(request):
 
 
 class AuthQuerySetMixin:
+    """A mixin for generic display views for user data.
+
+    Restricts the queryset to user-associated data only.
+    """
     model = None
     request = None
 
@@ -24,11 +29,39 @@ class AuthQuerySetMixin:
 
 
 class AuthCreateFormMixin:
+    """A mixin for generic create views for user data.
+
+    Automatically assigns the logged-in user to the 'user' field of the
+    model.
+    """
     request = None
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
+
+
+class AuthForeignKeyMixin:
+    """A mixin for generic edit views to protect other users' data.
+
+    Restricts the queryset for all foreign key fields to user-
+    associated data only.
+    """
+    model = None
+    request = None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if 'form' in context and hasattr(context['form'], 'fields'):
+            fk_fields = [
+                f for f in self.model._meta.get_fields()
+                if isinstance(f, ForeignKey)
+                and f.name in context['form'].fields
+            ]
+            for f in fk_fields:
+                context['form'].fields[f.name].queryset = (
+                    f.related_model.objects.filter(user=self.request.user))
+        return context
 
 
 # -- BANKS --
@@ -42,13 +75,15 @@ class BankView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
     template_name = 'budget/bank-detail.html'
 
 
-class BankCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class BankCreate(LoginRequiredMixin, AuthCreateFormMixin, AuthForeignKeyMixin,
+                 CreateView):
     model = models.Bank
     fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
     template_name = 'budget/bank-add.html'
 
 
-class BankUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class BankUpdate(LoginRequiredMixin, AuthQuerySetMixin, AuthForeignKeyMixin,
+                 UpdateView):
     model = models.Bank
     fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
     template_name = 'budget/bank-update.html'
@@ -61,23 +96,27 @@ class BankDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- ACCOUNT HOLDERS --
-class AccountHolderList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
+class AccountHolderList(LoginRequiredMixin, AuthQuerySetMixin,
+                        generic.ListView):
     model = models.AccountHolder
     template_name = 'budget/accountholder-list.html'
 
 
-class AccountHolderView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
+class AccountHolderView(LoginRequiredMixin, AuthQuerySetMixin,
+                        generic.DetailView):
     model = models.AccountHolder
     template_name = 'budget/accountholder-detail.html'
 
 
-class AccountHolderCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class AccountHolderCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                          AuthForeignKeyMixin, CreateView):
     model = models.AccountHolder
     fields = ['name']
     template_name = 'budget/accountholder-add.html'
 
 
-class AccountHolderUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class AccountHolderUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                          AuthForeignKeyMixin, UpdateView):
     model = models.AccountHolder
     fields = ['name']
     template_name = 'budget/accountholder-update.html'
@@ -100,7 +139,8 @@ class AccountView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
     template_name = 'budget/account-detail.html'
 
 
-class AccountCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class AccountCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                    AuthForeignKeyMixin, CreateView):
     model = models.Account
     fields = ['name', 'bank', 'holder', 'statement_date', 'date_opened',
               'annual_fee', 'interest_rate', 'credit_line',
@@ -108,7 +148,8 @@ class AccountCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
     template_name = 'budget/account-add.html'
 
 
-class AccountUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class AccountUpdate(LoginRequiredMixin, AuthQuerySetMixin, AuthForeignKeyMixin,
+                    UpdateView):
     model = models.Account
     fields = ['name', 'bank', 'holder', 'statement_date', 'date_opened',
               'annual_fee', 'interest_rate', 'credit_line',
@@ -123,13 +164,15 @@ class AccountDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- STATEMENTS --
-class StatementCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class StatementCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                      AuthForeignKeyMixin, CreateView):
     model = models.Statement
     fields = ['account', 'month', 'year', 'balance']
     template_name = 'budget/statement-add.html'
 
 
-class StatementUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class StatementUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                      AuthForeignKeyMixin, UpdateView):
     model = models.Statement
     fields = ['account', 'month', 'year', 'balance']
     template_name = 'budget/statement-update.html'
@@ -152,7 +195,7 @@ class UploadView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
     template_name = 'budget/upload-detail.html'
 
 
-class UploadCreate(LoginRequiredMixin, CreateView):
+class UploadCreate(LoginRequiredMixin, AuthForeignKeyMixin, CreateView):
     model = models.Upload
     fields = ['account', 'csv']
     template_name = 'budget/upload-add.html'
@@ -222,13 +265,15 @@ class CategoryView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
         return context
 
 
-class CategoryCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class CategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                     AuthForeignKeyMixin, CreateView):
     model = models.Category
     fields = ['name', 'budget']
     template_name = 'budget/category-add.html'
 
 
-class CategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class CategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                     AuthForeignKeyMixin, UpdateView):
     model = models.Category
     fields = ['name', 'budget']
     template_name = 'budget/category-update.html'
@@ -246,18 +291,21 @@ class SubcategoryList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     template_name = 'budget/subcategory-list.html'
 
 
-class SubcategoryView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
+class SubcategoryView(LoginRequiredMixin, AuthQuerySetMixin,
+                      generic.DetailView):
     model = models.Subcategory
     template_name = 'budget/subcategory-detail.html'
 
 
-class SubcategoryCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class SubcategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                        AuthForeignKeyMixin, CreateView):
     model = models.Subcategory
     fields = ['name', 'category']
     template_name = 'budget/subcategory-add.html'
 
 
-class SubcategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class SubcategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                        AuthForeignKeyMixin, UpdateView):
     model = models.Subcategory
     fields = ['name', 'category']
     template_name = 'budget/subcategory-update.html'
@@ -308,7 +356,8 @@ class PatternView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
     template_name = 'budget/pattern-detail.html'
 
 
-class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
+class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                    AuthForeignKeyMixin, CreateView):
     model = models.Pattern
     fields = ['pattern', 'subcategory']
     template_name = 'budget/pattern-add.html'
@@ -328,7 +377,8 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
         return reverse('budget:pattern-add')
 
 
-class PatternUpdate(LoginRequiredMixin, AuthQuerySetMixin, UpdateView):
+class PatternUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                    AuthForeignKeyMixin, UpdateView):
     model = models.Pattern
     fields = ['pattern', 'subcategory']
     template_name = 'budget/pattern-update.html'
@@ -346,7 +396,8 @@ class TransactionList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     template_name = 'budget/transaction-list.html'
 
 
-class TransactionView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
+class TransactionView(LoginRequiredMixin, AuthQuerySetMixin,
+                      generic.DetailView):
     model = models.Transaction
     template_name = 'budget/transaction-detail.html'
 

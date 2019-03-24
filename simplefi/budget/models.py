@@ -177,6 +177,7 @@ class Upload(UserDataModel):
         # Create transaction objects
         for i, r in df.iterrows():
             t = Transaction(
+                user=self.user,
                 upload_id=self,
                 account=self.account,
                 date=r[columns[0]],
@@ -247,9 +248,9 @@ class Pattern(UserDataModel):
             description__iregex=self.pattern,
             category=None
         ).update(
-            pattern_id=self.pattern,
-            category_id=self.category,
-            subcategory_id=self.subcategory_id
+            pattern=self,
+            category=self.category,
+            subcategory=self.subcategory
         )
 
 
