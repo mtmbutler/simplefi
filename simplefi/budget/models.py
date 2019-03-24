@@ -9,7 +9,7 @@ from django.utils import timezone
 
 class TransactionManager(models.Manager):
     @staticmethod
-    def in_last_thirteen_months():
+    def in_last_thirteen_months(user):
         now = timezone.now()
 
         # Logic
@@ -26,6 +26,7 @@ class TransactionManager(models.Manager):
         start_date = first_day_last_month - datetime.timedelta(days=365)
 
         return Transaction.objects.filter(
+            user=user,
             date__range=[d.strftime("%Y-%m-%d") for d in [start_date, now]]
         )
 
@@ -177,7 +178,7 @@ class Upload(UserDataModel):
         for i, r in df.iterrows():
             t = Transaction(
                 upload_id=self,
-                account=Account.objects.get(name=self.account_id),
+                account=self.account,
                 date=r[columns[0]],
                 amount=r[columns[1]],
                 description=r[columns[2]]
@@ -188,7 +189,7 @@ class Upload(UserDataModel):
                 continue
 
         # Classify
-        for p in Pattern.objects.all():
+        for p in Pattern.objects.filter(user=self.user):
             p.match_transactions()
 
         return True
@@ -217,7 +218,7 @@ class Subcategory(UserDataModel):
         ordering = ['category_id', 'name']
 
     def __str__(self):
-        return f"{self.category_id}/{self.name}"
+        return f"{self.category.name}/{self.name}"
 
     def get_absolute_url(self):
         return reverse('budget:subcategory-detail', kwargs={'pk': self.pk})
@@ -242,6 +243,7 @@ class Pattern(UserDataModel):
 
     def match_transactions(self):
         Transaction.objects.filter(
+            user=self.user,
             description__iregex=self.pattern,
             category=None
         ).update(

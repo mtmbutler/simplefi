@@ -8,23 +8,25 @@ from .models import Account, Category, Statement, Transaction
 MAX_ROWS = 120
 
 
-def one_year_summary(category=None):
+def one_year_summary(user, category=None):
     """Generates a DataFrame summarizing the last 13 months."""
-    li = Transaction.objects.in_last_thirteen_months()
+    li = Transaction.objects.in_last_thirteen_months(user)
+    if not li.exists():
+        return pd.DataFrame()
 
     # Build DataFrame from query set
     if category is None:  # All
         df = pd.DataFrame([
             {'date': t.date,
              'amount': t.amount,
-             'category': t.category_id}
+             'category': t.category.name}
             for t in li
         ])
     else:
         df = pd.DataFrame([
             {'date': t.date,
              'amount': t.amount,
-             'subcategory': t.subcategory_id}
+             'subcategory': t.subcategory.name}
             for t in li.filter(category=category)
         ])
 
@@ -41,7 +43,7 @@ def one_year_summary(category=None):
 
     # Add budget column
     if category is None:
-        cats = Category.objects.all()
+        cats = Category.objects.filter(user=user)
         pivot.insert(0, 'Budget', 0)
         for i, __ in pivot.iterrows():
             try:
@@ -58,9 +60,9 @@ def one_year_summary(category=None):
     return pivot
 
 
-def debt_summary():
+def debt_summary(user):
     """Generates a DataFrame showing the path out of debt."""
-    accs = Account.objects.filter(credit_line__gt=0)
+    accs = Account.objects.filter(user=user, credit_line__gt=0)
 
     # Get starting point
     earliest_dates = []
@@ -68,6 +70,8 @@ def debt_summary():
         d = a.earliest_statement_date
         if d is not None:
             earliest_dates.append(d)
+    if not earliest_dates:
+        return pd.DataFrame()
     earliest = min(earliest_dates)
     month = earliest.month
     year = earliest.year
@@ -98,7 +102,11 @@ def debt_summary():
 
         # Spend the debt budget
         if len(min_pay) == accs.count():
-            budget = abs(Category.objects.get(name='Debt').budget)
+            debt, new = Category.objects.get_or_create(
+                user=user, name='Debt', defaults={'budget': 0})
+            if new:
+                debt.save()
+            budget = abs(debt.budget)
             budget -= sum(min_pay.values())
             for a in accs.order_by('priority'):
                 if row[a.name] >= budget:

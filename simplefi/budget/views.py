@@ -197,7 +197,10 @@ class CategoryView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
         }
 
         if context['subcategories']:  # Has subcategories
-            df = one_year_summary(category=self.object.name)
+            df = one_year_summary(user=self.request.user,
+                                  category=models.Category.objects.get(
+                                      user=self.request.user,
+                                      name=self.object.name))
 
             # Convert (2018, 2) MultiIndex into "Feb 2018"
             cols = []
@@ -272,7 +275,7 @@ class PatternClassify(LoginRequiredMixin, generic.RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
         # Classify
-        for p in models.Pattern.objects.all():
+        for p in models.Pattern.objects.filter(user=self.request.user):
             p.match_transactions()
         return super().get_redirect_url(*args, **kwargs)
 
@@ -282,7 +285,8 @@ class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
         # Delassify
-        models.Transaction.objects.all().update(pattern=None, category=None, subcategory=None)
+        models.Transaction.objects.filter(user=self.request.user).update(
+            pattern=None, category=None, subcategory=None)
         return super().get_redirect_url(*args, **kwargs)
 
 
@@ -292,7 +296,8 @@ class PatternList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
 
     def get_context_data(self, **kwargs):
         context = super(PatternList, self).get_context_data(**kwargs)
-        li = models.Transaction.objects.filter(category_id=None)
+        li = models.Transaction.objects.filter(user=self.request.user,
+                                               category_id=None)
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context
@@ -310,14 +315,15 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(PatternCreate, self).get_context_data(**kwargs)
-        li = models.Transaction.objects.filter(category_id=None).order_by('description')
+        li = models.Transaction.objects.filter(
+            user=self.request.user, category_id=None).order_by('description')
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context
 
     def get_success_url(self):
         # Classify
-        for p in models.Pattern.objects.all():
+        for p in models.Pattern.objects.filter(user=self.request.user):
             p.match_transactions()
         return reverse('budget:pattern-add')
 
@@ -357,9 +363,8 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
     template_name = 'budget/one_year_summary.html'
 
-    @staticmethod
-    def get_context_data():
-        df = one_year_summary()
+    def get_context_data(self):
+        df = one_year_summary(user=self.request.user)
 
         # Convert (2018, 2) MultiIndex into "Feb 2018"
         cols = []
@@ -376,17 +381,16 @@ class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
                      for i, r in df.iterrows()},
             # Add a dict of subcategory names and pks
             'categories': {c.name: c.id
-                           for c in models.Category.objects.all()}
-        }
+                           for c in models.Category.objects.filter(
+                                user=self.request.user)}}
         return context
 
 
 class DebtSummary(LoginRequiredMixin, generic.TemplateView):
     template_name = 'budget/debt_summary.html'
 
-    @staticmethod
-    def get_context_data():
-        df = debt_summary()
+    def get_context_data(self):
+        df = debt_summary(self.request.user)
 
         # Convert (2018, 2) MultiIndex into "Feb 2018"
         index_ = []
@@ -400,7 +404,6 @@ class DebtSummary(LoginRequiredMixin, generic.TemplateView):
                      for i, (__, r) in enumerate(df.iterrows())},
             # Add a dict of account name and pks
             'accounts': {a.name: a.id
-                         for a in models.Account.objects.all()}
-        }
+                         for a in models.Account.objects.filter(
+                            user=self.request.user)}}
         return context
-
