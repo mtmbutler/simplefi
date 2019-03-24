@@ -15,19 +15,19 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import include, path
 from django.views.generic.base import RedirectView
 
 from . import settings
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='budget/', permanent=False), name='index'),
-    path('login/', LoginView.as_view(template_name='budget/login.html'), name='login'),
-    path('logout/', LogoutView.as_view(template_name='budget/logged_out.html'), name='logout'),
+    path('', RedirectView.as_view(url='budget/', permanent=False),
+         name='index'),
+    path('auth/', include('django.contrib.auth.urls')),
     path('budget/', include('budget.urls')),
     path('admin/', admin.site.urls),
 ]
 
 if settings.DEBUG:
-    urlpatterns.extend(static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
+    urlpatterns.extend(
+        static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
