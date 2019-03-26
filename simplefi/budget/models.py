@@ -196,12 +196,18 @@ class Upload(UserDataModel):
         return True
 
 
-class Category(UserDataModel):
-    name = models.CharField('Name', max_length=255)
-    budget = models.DecimalField('Monthly Target', decimal_places=2, max_digits=9, default=0.)
-
-    class Meta:
-        unique_together = ('user', 'name')
+class Category(models.Model):
+    CLASSES = (
+        ('income', 'Income'),
+        ('discretionary', 'Discretionary'),
+        ('bills', 'Bills'),
+        ('debt', 'Debt'),
+        ('savings', 'Savings')
+    )
+    name = models.CharField('Name', unique=True, max_length=255,
+                            choices=CLASSES)
+    budget = models.DecimalField('Monthly Target', decimal_places=2,
+                                 max_digits=9, default=0.)
 
     def __str__(self):
         return self.name
