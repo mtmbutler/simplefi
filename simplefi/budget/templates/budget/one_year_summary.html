@@ -16,8 +16,8 @@
         {% for index, row in data.items %}
         <tr>
             <th>
-                {% if index in categories and index %}
-                    <a href="{% url 'budget:category-detail' categories|get_item:index %}">{{ index }}</a>
+                {% if index in classes and index %}
+                    <a href="{% url 'budget:class-detail' classes|get_item:index %}">{{ index }}</a>
                 {% else %}
                     {{ index }}
                 {% endif %}

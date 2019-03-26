@@ -1,0 +1,10 @@
+{% extends "budget_base.html" %}
+
+{% block content %}
+    <h2>Classes</h2>
+    <ul>
+        {% for class in object_list %}
+            <li><a href="{% url 'budget:class-detail' class.id %}">{{ class }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

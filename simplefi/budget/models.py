@@ -196,7 +196,7 @@ class Upload(UserDataModel):
         return True
 
 
-class Category(models.Model):
+class TransactionClass(models.Model):
     CLASSES = (
         ('income', 'Income'),
         ('discretionary', 'Discretionary'),
@@ -206,26 +206,21 @@ class Category(models.Model):
     )
     name = models.CharField('Name', unique=True, max_length=255,
                             choices=CLASSES)
-    budget = models.DecimalField('Monthly Target', decimal_places=2,
-                                 max_digits=9, default=0.)
 
     def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return reverse('budget:category-detail', kwargs={'pk': self.pk})
+        return self.get_name_display()
 
 
 class Subcategory(UserDataModel):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
+    class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE, null=True)
     name = models.CharField('Name', max_length=255)
 
     class Meta:
-        unique_together = ('user', 'category', 'name')
-        ordering = ['category_id', 'name']
+        unique_together = ('user', 'class_field', 'name')
+        ordering = ['class_field_id', 'name']
 
     def __str__(self):
-        return f"{self.category.name}/{self.name}"
+        return f"{self.class_field.name}/{self.name}"
 
     def get_absolute_url(self):
         return reverse('budget:subcategory-detail', kwargs={'pk': self.pk})
@@ -242,8 +237,8 @@ class Pattern(UserDataModel):
         return self.pattern
 
     @property
-    def category(self):
-        return self.subcategory.category
+    def class_field(self):
+        return self.subcategory.class_field
 
     def get_absolute_url(self):
         return reverse('budget:pattern-detail', kwargs={'pk': self.pk})
@@ -252,10 +247,10 @@ class Pattern(UserDataModel):
         Transaction.objects.filter(
             user=self.user,
             description__iregex=self.pattern,
-            category=None
+            class_field=None
         ).update(
             pattern=self,
-            category=self.category,
+            class_field=self.class_field,
             subcategory=self.subcategory
         )
 
@@ -267,7 +262,7 @@ class Transaction(UserDataModel):
     amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
     description = models.TextField('Description')
     pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
+    class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE, null=True)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
     objects = TransactionManager()
 

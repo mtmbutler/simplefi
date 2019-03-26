@@ -12,7 +12,6 @@
 ### TODO
 
 - Consolidate nav
-    - Rename 'Category' to 'Class' and make static
     - Rename 'Subcategory' to 'Category' and move to Pattern creation
 - Due diligence
     - Write tests

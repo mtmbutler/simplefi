@@ -7,8 +7,8 @@
         <span>{{ subcategory.name }}</span>
     </p>
     <p>
-        <b>Category:</b>
-        <span><a href="{% url 'budget:category-detail' subcategory.category.id %}">{{ subcategory.category.name }}</a></span>
+        <b>Class:</b>
+        <span><a href="{% url 'budget:class-detail' subcategory.class_field.id %}">{{ subcategory.class_field.name }}</a></span>
     </p>
     <ul>
         <li><a href="{% url 'budget:subcategory-update' subcategory.id %}">Update</a></li>

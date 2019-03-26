@@ -22,10 +22,10 @@
         <b>Description:</b>
         <span>{{ transaction.description }}</span>
     </p>
-    {% if transaction.category %}
+    {% if transaction.class_field %}
     <p>
-        <b>Category:</b>
-        <span><a href="{% url 'budget:category-detail' transaction.category.id %}">{{ transaction.category }}</a></span>
+        <b>Class:</b>
+        <span><a href="{% url 'budget:class-detail' transaction.class_field.id %}">{{ transaction.class_field }}</a></span>
     </p>
     {% endif %}
     {% if transaction.subcategory %}

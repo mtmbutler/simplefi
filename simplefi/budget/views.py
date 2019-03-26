@@ -220,18 +220,22 @@ class UploadDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- CATEGORIES --
-class CategoryList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
-    model = models.Category
-    template_name = 'budget/category-list.html'
+class ClassList(LoginRequiredMixin, generic.ListView):
+    model = models.TransactionClass
+    template_name = 'budget/class-list.html'
 
 
-class CategoryView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
-    model = models.Category
-    template_name = 'budget/category-detail.html'
+class ClassView(LoginRequiredMixin, generic.DetailView):
+    model = models.TransactionClass
+    template_name = 'budget/class-detail.html'
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
+
+        # Get user's transactions
+        context['transactions'] = self.object.transaction_set.filter(
+            user=self.request.user)
 
         # Add a dict of subcategory names and pks
         context['subcategories'] = {
@@ -240,10 +244,10 @@ class CategoryView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
         }
 
         if context['subcategories']:  # Has subcategories
-            df = one_year_summary(user=self.request.user,
-                                  category=models.Category.objects.get(
-                                      user=self.request.user,
-                                      name=self.object.name))
+            df = one_year_summary(
+                user=self.request.user,
+                class_field=models.TransactionClass.objects.get(
+                    name=self.object.name))
 
             # Convert (2018, 2) MultiIndex into "Feb 2018"
             cols = []
@@ -265,26 +269,6 @@ class CategoryView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
         return context
 
 
-class CategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
-                     AuthForeignKeyMixin, CreateView):
-    model = models.Category
-    fields = ['name', 'budget']
-    template_name = 'budget/category-add.html'
-
-
-class CategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
-                     AuthForeignKeyMixin, UpdateView):
-    model = models.Category
-    fields = ['name', 'budget']
-    template_name = 'budget/category-update.html'
-
-
-class CategoryDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
-    model = models.Category
-    success_url = reverse_lazy('budget:category-list')
-    template_name = 'budget/category-delete.html'
-
-
 # -- SUBCATEGORIES --
 class SubcategoryList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     model = models.Subcategory
@@ -300,14 +284,14 @@ class SubcategoryView(LoginRequiredMixin, AuthQuerySetMixin,
 class SubcategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
                         AuthForeignKeyMixin, CreateView):
     model = models.Subcategory
-    fields = ['name', 'category']
+    fields = ['name', 'class_field']
     template_name = 'budget/subcategory-add.html'
 
 
 class SubcategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
                         AuthForeignKeyMixin, UpdateView):
     model = models.Subcategory
-    fields = ['name', 'category']
+    fields = ['name', 'class_field']
     template_name = 'budget/subcategory-update.html'
 
 
@@ -334,7 +318,7 @@ class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         # Delassify
         models.Transaction.objects.filter(user=self.request.user).update(
-            pattern=None, category=None, subcategory=None)
+            pattern=None, class_field=None, subcategory=None)
         return super().get_redirect_url(*args, **kwargs)
 
 
@@ -345,7 +329,7 @@ class PatternList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super(PatternList, self).get_context_data(**kwargs)
         li = models.Transaction.objects.filter(user=self.request.user,
-                                               category_id=None)
+                                               class_field=None)
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context
@@ -365,7 +349,7 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
     def get_context_data(self, **kwargs):
         context = super(PatternCreate, self).get_context_data(**kwargs)
         li = models.Transaction.objects.filter(
-            user=self.request.user, category_id=None).order_by('description')
+            user=self.request.user, class_field=None).order_by('description')
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context
@@ -431,9 +415,8 @@ class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
             'data': {i: [f'{f:.0f}' for f in r]
                      for i, r in df.iterrows()},
             # Add a dict of subcategory names and pks
-            'categories': {c.name: c.id
-                           for c in models.Category.objects.filter(
-                                user=self.request.user)}}
+            'classes': {c.name: c.id
+                        for c in models.TransactionClass.objects.all()}}
         return context
 
 

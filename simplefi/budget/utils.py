@@ -2,24 +2,24 @@ import numpy as np
 import pandas as pd
 from django.utils import timezone
 
-from .models import Account, Category, Statement, Transaction
+from .models import Account, TransactionClass, Statement, Transaction
 
 
 MAX_ROWS = 120
 
 
-def one_year_summary(user, category=None):
+def one_year_summary(user, class_field=None):
     """Generates a DataFrame summarizing the last 13 months."""
     li = Transaction.objects.in_last_thirteen_months(user)
     if not li.exists():
         return pd.DataFrame()
 
     # Build DataFrame from query set
-    if category is None:  # All
+    if class_field is None:  # All
         df = pd.DataFrame([
             {'date': t.date,
              'amount': t.amount,
-             'category': t.category.name}
+             'class_field': t.class_field.name}
             for t in li
         ])
     else:
@@ -27,8 +27,11 @@ def one_year_summary(user, category=None):
             {'date': t.date,
              'amount': t.amount,
              'subcategory': t.subcategory.name}
-            for t in li.filter(category=category)
+            for t in li.filter(class_field=class_field)
         ])
+
+    if df.empty:
+        return df
 
     # Add datetime columns for grouping
     df['date'] = pd.to_datetime(df['date'])
@@ -36,23 +39,10 @@ def one_year_summary(user, category=None):
     df['year'] = df['date'].dt.year
 
     # Pivot
-    index = 'category' if category is None else 'subcategory'
+    index = 'class_field' if class_field is None else 'subcategory'
     pivot = pd.pivot_table(df, values='amount', index=index,
                            columns=['year', 'month'], aggfunc=np.sum)
     pivot = pivot.fillna(0)
-
-    # Add budget column
-    if category is None:
-        cats = Category.objects.filter(user=user)
-        pivot.insert(0, 'Budget', 0)
-        for i, __ in pivot.iterrows():
-            try:
-                budget = cats.get(name=i).budget
-                pivot.loc[i, 'Budget'] = budget
-                print(budget)
-            except Category.DoesNotExist:
-                print(i, [c.name for c in cats])
-                pivot.loc[i, 'Budget'] = 0
 
     # Add total row
     pivot.loc['Total', :] = pivot.sum()
@@ -102,7 +92,7 @@ def debt_summary(user):
 
         # Spend the debt budget
         if len(min_pay) == accs.count():
-            debt, new = Category.objects.get_or_create(
+            debt, new = TransactionClass.objects.get_or_create(
                 user=user, name='Debt', defaults={'budget': 0})
             if new:
                 debt.save()

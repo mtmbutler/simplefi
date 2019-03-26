@@ -38,12 +38,9 @@ urlpatterns = [
     path('uploads/<int:pk>/', views.UploadView.as_view(), name='upload-detail'),
     path('uploads/<int:pk>/delete/', views.UploadDelete.as_view(), name='upload-delete'),
     
-    # Categories
-    path('categories/', views.CategoryList.as_view(), name='category-list'),
-    path('categories/add/', views.CategoryCreate.as_view(), name='category-add'),
-    path('categories/<int:pk>/', views.CategoryView.as_view(), name='category-detail'),
-    path('categories/<int:pk>/update/', views.CategoryUpdate.as_view(), name='category-update'),
-    path('categories/<int:pk>/delete/', views.CategoryDelete.as_view(), name='category-delete'),
+    # Classes
+    path('classes/', views.ClassList.as_view(), name='class-list'),
+    path('classes/<int:pk>/', views.ClassView.as_view(), name='class-detail'),
     
     # Subcategories
     path('subcategories/', views.SubcategoryList.as_view(), name='subcategory-list'),
