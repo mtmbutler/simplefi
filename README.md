@@ -12,10 +12,6 @@
 ### TODO
 
 - Consolidate nav
-    - Move bank creation to account creation
-    - Move account holder creation to account creation
-        - Does it need to be a model?
-    - Move upload creation to account update
     - Rename 'Category' to 'Class' and make static
     - Rename 'Subcategory' to 'Category' and move to Pattern creation
     - Remove summaries from nav and add links at index
