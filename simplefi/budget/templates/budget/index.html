@@ -1,6 +1,9 @@
 {% extends "budget_base.html" %}
 
 {% block content %}
-    <h2>Budget</h2>
-    <p>Welcome to the index.</p>
+    <h2>Summary</h2>
+    <p>
+        <a href="{% url 'budget:one-year-summary' %}">One-Year Summary</a>
+        <br><a href="{% url 'budget:debt-summary' %}">Debt Summary</a>
+    </p>
 {% endblock %}

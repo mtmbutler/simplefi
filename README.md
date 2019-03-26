@@ -14,7 +14,6 @@
 - Consolidate nav
     - Rename 'Category' to 'Class' and make static
     - Rename 'Subcategory' to 'Category' and move to Pattern creation
-    - Remove summaries from nav and add links at index
 - Due diligence
     - Write tests
     - Write docs
