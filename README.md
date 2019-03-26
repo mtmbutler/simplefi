@@ -15,8 +15,6 @@
     - Rename 'Category' to 'Class' and make static
     - Rename 'Subcategory' to 'Category' and move to Pattern creation
     - Remove summaries from nav and add links at index
-    - Rename index to 'Summary'
-    - Make Login/Logout dynamic based on auth status
 - Due diligence
     - Write tests
     - Write docs
