@@ -8,7 +8,7 @@
     </p>
     <p>
         <b>Class:</b>
-        <span><a href="{% url 'budget:class-detail' subcategory.class_field.id %}">{{ subcategory.class_field.name }}</a></span>
+        <span><a href="{% url 'budget:class-detail' subcategory.class_field.id %}">{{ subcategory.class_field }}</a></span>
     </p>
     <ul>
         <li><a href="{% url 'budget:subcategory-update' subcategory.id %}">Update</a></li>
@@ -16,7 +16,7 @@
         <li><a href="{% url 'budget:subcategory-list' %}">Back</a></li>
     </ul>
     <b>Transactions:</b>
-    {% for t in subcategory.transaction_set.all %}
+    {% for t in transactions %}
         <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
     {% endfor %}
 {% endblock %}

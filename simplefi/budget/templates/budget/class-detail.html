@@ -5,7 +5,11 @@
     <h2>Class Detail</h2>
     <p>
         <b>Name:</b>
-        <span>{{ transactionclass.name }}</span>
+        <span>{{ transactionclass }}</span>
+    </p>
+    <p>
+        <b>Budget:</b>
+        <span>{{ budget.value }} (<a href="{% url 'budget:budget-update' budget.id %}">update</a>)</span>
     </p>
     <ul>
         <li><a href="{% url 'budget:class-list' %}">Back To Class List</a></li>

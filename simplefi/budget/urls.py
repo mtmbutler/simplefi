@@ -41,6 +41,7 @@ urlpatterns = [
     # Classes
     path('classes/', views.ClassList.as_view(), name='class-list'),
     path('classes/<int:pk>/', views.ClassView.as_view(), name='class-detail'),
+    path('classes/<int:pk>/update/', views.BudgetUpdate.as_view(), name='budget-update'),
     
     # Subcategories
     path('subcategories/', views.SubcategoryList.as_view(), name='subcategory-list'),

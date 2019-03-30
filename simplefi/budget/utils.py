@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from django.utils import timezone
 
-from .models import Account, TransactionClass, Statement, Transaction
+from .models import Account, Budget, Statement, Transaction
 
 
 MAX_ROWS = 120
@@ -27,7 +27,7 @@ def one_year_summary(user, class_field=None):
             {'date': t.date,
              'amount': t.amount,
              'subcategory': t.subcategory.name}
-            for t in li.filter(class_field=class_field)
+            for t in li.filter(pattern__subcategory__class_field=class_field)
         ])
 
     if df.empty:
@@ -92,11 +92,9 @@ def debt_summary(user):
 
         # Spend the debt budget
         if len(min_pay) == accs.count():
-            debt, new = TransactionClass.objects.get_or_create(
-                user=user, name='Debt', defaults={'budget': 0})
-            if new:
-                debt.save()
-            budget = abs(debt.budget)
+            debt_budget = Budget.objects.get(
+                user=user, class_field__name='debt')
+            budget = abs(debt_budget.value)
             budget -= sum(min_pay.values())
             for a in accs.order_by('priority'):
                 if row[a.name] >= budget:

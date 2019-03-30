@@ -1,4 +1,5 @@
 import datetime
+from itertools import chain
 
 import pandas as pd
 from django.conf import settings
@@ -207,8 +208,30 @@ class TransactionClass(models.Model):
     name = models.CharField('Name', unique=True, max_length=255,
                             choices=CLASSES)
 
+    class Meta:
+        verbose_name_plural = "transaction classes"
+
     def __str__(self):
         return self.get_name_display()
+
+    def transactions(self, user):
+        subs = self.subcategory_set.filter(user=user)
+        patterns = chain(*[s.pattern_set.all() for s in subs])
+        return chain(*[p.transaction_set.all() for p in patterns])
+
+
+class Budget(UserDataModel):
+    class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE)
+    value = models.DecimalField('Amount', decimal_places=2, max_digits=9)
+
+    class Meta:
+        unique_together = ('user', 'class_field')
+
+    def __str__(self):
+        return f"{self.class_field} - {self.value}"
+
+    def get_absolute_url(self):
+        return reverse('budget:class-detail', kwargs={'pk': self.class_field_id})
 
 
 class Subcategory(UserDataModel):
@@ -218,12 +241,17 @@ class Subcategory(UserDataModel):
     class Meta:
         unique_together = ('user', 'class_field', 'name')
         ordering = ['class_field_id', 'name']
+        verbose_name_plural = "subcategories"
 
     def __str__(self):
-        return f"{self.class_field.name}/{self.name}"
+        return f"{self.class_field}/{self.name}"
 
     def get_absolute_url(self):
         return reverse('budget:subcategory-detail', kwargs={'pk': self.pk})
+
+    def transactions(self, user):
+        patterns = self.pattern_set.filter(user=user)
+        return chain(*[p.transaction_set.all() for p in patterns])
 
 
 class Pattern(UserDataModel):
@@ -247,31 +275,36 @@ class Pattern(UserDataModel):
         Transaction.objects.filter(
             user=self.user,
             description__iregex=self.pattern,
-            class_field=None
-        ).update(
-            pattern=self,
-            class_field=self.class_field,
-            subcategory=self.subcategory
-        )
+            pattern=None
+        ).update(pattern=self)
 
 
 class Transaction(UserDataModel):
     upload_id = models.ForeignKey(Upload, on_delete=models.CASCADE)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     date = models.DateField('Transaction Date')
     amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
     description = models.TextField('Description')
     pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True)
-    class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE, null=True)
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
     objects = TransactionManager()
 
     class Meta:
         ordering = ['-date']
-        unique_together = ('user', 'account', 'date', 'amount', 'description')
+        unique_together = ('user', 'upload_id', 'date', 'amount', 'description')
 
     def __str__(self):
         return f"{self.account} | {self.date} | {self.amount} | {self.description}"
 
     def get_absolute_url(self):
         return reverse('budget:transaction-detail', kwargs={'pk': self.pk})
+
+    @property
+    def class_field(self):
+        return self.pattern.class_field
+
+    @property
+    def subcategory(self):
+        return self.pattern.subcategory
+
+    @property
+    def account(self):
+        return self.upload_id.account

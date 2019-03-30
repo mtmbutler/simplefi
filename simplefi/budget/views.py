@@ -1,6 +1,7 @@
 import calendar
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -59,8 +60,11 @@ class AuthForeignKeyMixin:
                 and f.name in context['form'].fields
             ]
             for f in fk_fields:
-                context['form'].fields[f.name].queryset = (
-                    f.related_model.objects.filter(user=self.request.user))
+                try:
+                    qs = f.related_model.objects.filter(user=self.request.user)
+                except FieldError:  # Not a user field
+                    qs = f.related_model.objects.all()
+                context['form'].fields[f.name].queryset = qs
         return context
 
 
@@ -219,7 +223,14 @@ class UploadDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
         return reverse_lazy('budget:upload-list')
 
 
-# -- CATEGORIES --
+# -- CLASSES --
+class BudgetUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                   AuthForeignKeyMixin, generic.UpdateView):
+    model = models.Budget
+    fields = ['value']
+    template_name = 'budget/budget-update.html'
+
+
 class ClassList(LoginRequiredMixin, generic.ListView):
     model = models.TransactionClass
     template_name = 'budget/class-list.html'
@@ -234,8 +245,11 @@ class ClassView(LoginRequiredMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
 
         # Get user's transactions
-        context['transactions'] = self.object.transaction_set.filter(
-            user=self.request.user)
+        context['transactions'] = self.object.transactions(user=self.request.user)
+
+        # Get budget
+        context['budget'] = models.Budget.objects.get(
+            user=self.request.user, class_field=self.object)
 
         # Add a dict of subcategory names and pks
         context['subcategories'] = {
@@ -280,6 +294,16 @@ class SubcategoryView(LoginRequiredMixin, AuthQuerySetMixin,
     model = models.Subcategory
     template_name = 'budget/subcategory-detail.html'
 
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+
+        # Get user's transactions
+        context['transactions'] = self.object.transactions(
+            user=self.request.user)
+
+        return context
+
 
 class SubcategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
                         AuthForeignKeyMixin, CreateView):
@@ -318,7 +342,7 @@ class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         # Delassify
         models.Transaction.objects.filter(user=self.request.user).update(
-            pattern=None, class_field=None, subcategory=None)
+            pattern=None)
         return super().get_redirect_url(*args, **kwargs)
 
 
@@ -329,7 +353,7 @@ class PatternList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super(PatternList, self).get_context_data(**kwargs)
         li = models.Transaction.objects.filter(user=self.request.user,
-                                               class_field=None)
+                                               pattern=None)
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context
