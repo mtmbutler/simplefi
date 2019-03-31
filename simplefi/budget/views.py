@@ -252,13 +252,13 @@ class ClassView(LoginRequiredMixin, generic.DetailView):
         context['budget'] = models.Budget.objects.get(
             user=self.request.user, class_field=self.object)
 
-        # Add a dict of subcategory names and pks
-        context['subcategories'] = {
+        # Add a dict of category names and pks
+        context['categories'] = {
             sc.name: sc.id
-            for sc in self.object.subcategory_set.all()
+            for sc in self.object.category_set.all()
         }
 
-        if context['subcategories']:  # Has subcategories
+        if context['categories']:  # Has categories
             df = one_year_summary(
                 user=self.request.user,
                 class_field=models.TransactionClass.objects.get(
@@ -284,36 +284,36 @@ class ClassView(LoginRequiredMixin, generic.DetailView):
         return context
 
 
-# -- SUBCATEGORIES --
-class SubcategoryList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
-    model = models.Subcategory
-    template_name = 'budget/subcategory-list.html'
+# -- CATEGORIES --
+class CategoryList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
+    model = models.Category
+    template_name = 'budget/category-list.html'
 
 
-class SubcategoryView(LoginRequiredMixin, AuthQuerySetMixin,
-                      generic.DetailView):
-    model = models.Subcategory
-    template_name = 'budget/subcategory-detail.html'
+class CategoryView(LoginRequiredMixin, AuthQuerySetMixin,
+                   generic.DetailView):
+    model = models.Category
+    template_name = 'budget/category-detail.html'
 
 
-class SubcategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
-                        AuthForeignKeyMixin, CreateView):
-    model = models.Subcategory
+class CategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                     AuthForeignKeyMixin, CreateView):
+    model = models.Category
     fields = ['name', 'class_field']
-    template_name = 'budget/subcategory-add.html'
+    template_name = 'budget/category-add.html'
 
 
-class SubcategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
-                        AuthForeignKeyMixin, UpdateView):
-    model = models.Subcategory
+class CategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
+                     AuthForeignKeyMixin, UpdateView):
+    model = models.Category
     fields = ['name', 'class_field']
-    template_name = 'budget/subcategory-update.html'
+    template_name = 'budget/category-update.html'
 
 
-class SubcategoryDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
-    model = models.Subcategory
-    success_url = reverse_lazy('budget:subcategory-list')
-    template_name = 'budget/subcategory-delete.html'
+class CategoryDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
+    model = models.Category
+    success_url = reverse_lazy('budget:category-list')
+    template_name = 'budget/category-delete.html'
 
 
 # -- PATTERNS --
@@ -358,7 +358,7 @@ class PatternView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
 class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
                     AuthForeignKeyMixin, CreateView):
     model = models.Pattern
-    fields = ['pattern', 'subcategory']
+    fields = ['pattern', 'category']
     template_name = 'budget/pattern-add.html'
 
     def get_context_data(self, **kwargs):
@@ -376,7 +376,7 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
 class PatternUpdate(LoginRequiredMixin, AuthQuerySetMixin,
                     AuthForeignKeyMixin, UpdateView):
     model = models.Pattern
-    fields = ['pattern', 'subcategory']
+    fields = ['pattern', 'category']
     template_name = 'budget/pattern-update.html'
 
 
@@ -426,7 +426,7 @@ class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
             # (formatted to 0 decimal places)
             'data': {i: [f'{f:.0f}' for f in r]
                      for i, r in df.iterrows()},
-            # Add a dict of subcategory names and pks
+            # Add a dict of category names and pks
             'classes': {c.name: c.id
                         for c in models.TransactionClass.objects.all()}}
         return context

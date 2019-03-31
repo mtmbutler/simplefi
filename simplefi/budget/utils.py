@@ -26,8 +26,8 @@ def one_year_summary(user, class_field=None):
         df = pd.DataFrame([
             {'date': t.date,
              'amount': t.amount,
-             'subcategory': t.subcategory.name}
-            for t in li.filter(pattern__subcategory__class_field=class_field)
+             'category': t.category.name}
+            for t in li.filter(pattern__category__class_field=class_field)
         ])
 
     if df.empty:
@@ -39,7 +39,7 @@ def one_year_summary(user, class_field=None):
     df['year'] = df['date'].dt.year
 
     # Pivot
-    index = 'class_field' if class_field is None else 'subcategory'
+    index = 'class_field' if class_field is None else 'category'
     pivot = pd.pivot_table(df, values='amount', index=index,
                            columns=['year', 'month'], aggfunc=np.sum)
     pivot = pivot.fillna(0)

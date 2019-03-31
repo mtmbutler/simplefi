@@ -11,8 +11,6 @@
 
 ### TODO
 
-- Consolidate nav
-    - Rename 'Subcategory' to 'Category' and move to Pattern creation
 - Due diligence
     - Write tests
     - Write docs

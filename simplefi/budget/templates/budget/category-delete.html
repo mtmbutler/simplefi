@@ -1,12 +1,12 @@
 {% extends "budget_base.html" %}
 
 {% block content %}
-    <h2>Delete subcategory</h2>
+    <h2>Delete category</h2>
     <form method="POST" class="post-form">{% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="save btn btn-default">Confirm</button>
     </form>
     <ul>
-        <li><a href="{% url 'budget:subcategory-detail' subcategory.id %}">Back</a></li>
+        <li><a href="{% url 'budget:category-detail' category.id %}">Back</a></li>
     </ul>
 {% endblock %}

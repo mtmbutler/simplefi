@@ -14,7 +14,7 @@
     <ul>
         <li><a href="{% url 'budget:class-list' %}">Back To Class List</a></li>
     </ul>
-    {% if subcategories %}
+    {% if categories %}
     <b>One-Year Summary</b>
     <table>
         <tr>
@@ -29,8 +29,8 @@
         {% for index, row in data.items %}
         <tr>
             <th>
-                {% if index in subcategories and index %}
-                    <a href="{% url 'budget:subcategory-detail' subcategories|get_item:index %}">{{ index }}</a>
+                {% if index in categories and index %}
+                    <a href="{% url 'budget:category-detail' categories|get_item:index %}">{{ index }}</a>
                 {% else %}
                     {{ index }}
                 {% endif %}

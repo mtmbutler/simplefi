@@ -28,10 +28,10 @@
         <span><a href="{% url 'budget:class-detail' transaction.class_field.id %}">{{ transaction.class_field }}</a></span>
     </p>
     {% endif %}
-    {% if transaction.subcategory %}
+    {% if transaction.category %}
     <p>
-        <b>Subcategory:</b>
-        <span><a href="{% url 'budget:subcategory-detail' transaction.subcategory.id %}">{{ transaction.subcategory }}</a></span>
+        <b>Category:</b>
+        <span><a href="{% url 'budget:category-detail' transaction.category.id %}">{{ transaction.category }}</a></span>
     </p>
     {% endif %}
     {% if transaction.pattern %}

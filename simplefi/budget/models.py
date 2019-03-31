@@ -1,5 +1,4 @@
 import datetime
-from itertools import chain
 
 import pandas as pd
 from django.conf import settings
@@ -227,7 +226,7 @@ class TransactionClass(models.Model):
 
     def transactions(self, user):
         return Transaction.objects.filter(
-            user=user, pattern__subcategory__class_field=self)
+            user=user, pattern__category__class_field=self)
 
 
 class Budget(UserDataModel):
@@ -244,29 +243,29 @@ class Budget(UserDataModel):
         return reverse('budget:class-detail', kwargs={'pk': self.class_field_id})
 
 
-class Subcategory(UserDataModel):
+class Category(UserDataModel):
     class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE, null=True)
     name = models.CharField('Name', max_length=255)
 
     class Meta:
         unique_together = ('user', 'class_field', 'name')
         ordering = ['class_field_id', 'name']
-        verbose_name_plural = "subcategories"
+        verbose_name_plural = "categories"
 
     def __str__(self):
         return f"{self.class_field}/{self.name}"
 
     def get_absolute_url(self):
-        return reverse('budget:subcategory-detail', kwargs={'pk': self.pk})
+        return reverse('budget:category-detail', kwargs={'pk': self.pk})
 
     @property
     def transaction_set(self):
-        return Transaction.objects.filter(pattern__subcategory=self)
+        return Transaction.objects.filter(pattern__category=self)
 
 
 class Pattern(UserDataModel):
     pattern = models.CharField('Match Pattern', max_length=255)
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, null=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
 
     class Meta:
         unique_together = ('user', 'pattern')
@@ -276,7 +275,7 @@ class Pattern(UserDataModel):
 
     @property
     def class_field(self):
-        return self.subcategory.class_field
+        return self.category.class_field
 
     def get_absolute_url(self):
         return reverse('budget:pattern-detail', kwargs={'pk': self.pk})
@@ -317,8 +316,8 @@ class Transaction(UserDataModel):
         return self.pattern.class_field
 
     @property
-    def subcategory(self):
-        return self.pattern.subcategory
+    def category(self):
+        return self.pattern.category
 
     @property
     def account(self):
