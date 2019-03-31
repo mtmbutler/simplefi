@@ -194,7 +194,15 @@ class Upload(UserDataModel):
                 continue
 
         # Classify
-        for p in Pattern.objects.filter(user=self.user):
+        patterns = (
+            Pattern.objects
+            .filter(user=self.user)
+            .annotate(matches=models.Count('transaction'))
+            .order_by('-matches'))  # Start with most-used patterns
+        for p in patterns:
+            unmatched = self.transaction_set.filter(pattern=None)
+            if not unmatched.exists():
+                break
             p.match_transactions()
 
         return True
@@ -272,6 +280,10 @@ class Pattern(UserDataModel):
 
     def get_absolute_url(self):
         return reverse('budget:pattern-detail', kwargs={'pk': self.pk})
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.match_transactions()
 
     def match_transactions(self):
         Transaction.objects.filter(

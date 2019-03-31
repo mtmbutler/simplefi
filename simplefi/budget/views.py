@@ -370,9 +370,6 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
         return context
 
     def get_success_url(self):
-        # Classify
-        for p in models.Pattern.objects.filter(user=self.request.user):
-            p.match_transactions()
         return reverse('budget:pattern-add')
 
 
