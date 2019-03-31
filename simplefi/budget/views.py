@@ -245,7 +245,8 @@ class ClassView(LoginRequiredMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
 
         # Get user's transactions
-        context['transactions'] = self.object.transactions(user=self.request.user)
+        context['transactions'] = self.object.transactions(
+            user=self.request.user)
 
         # Get budget
         context['budget'] = models.Budget.objects.get(
@@ -293,16 +294,6 @@ class SubcategoryView(LoginRequiredMixin, AuthQuerySetMixin,
                       generic.DetailView):
     model = models.Subcategory
     template_name = 'budget/subcategory-detail.html'
-
-    def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
-        context = super().get_context_data(**kwargs)
-
-        # Get user's transactions
-        context['transactions'] = self.object.transactions(
-            user=self.request.user)
-
-        return context
 
 
 class SubcategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
@@ -373,7 +364,7 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
     def get_context_data(self, **kwargs):
         context = super(PatternCreate, self).get_context_data(**kwargs)
         li = models.Transaction.objects.filter(
-            user=self.request.user, class_field=None).order_by('description')
+            user=self.request.user, pattern=None).order_by('description')
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context

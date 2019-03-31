@@ -129,6 +129,10 @@ class Account(UserDataModel):
         return max(bal * (1 + self.interest_rate / 100 / 12)
                    - self.min_pay(bal=bal), 0)
 
+    @property
+    def transaction_set(self):
+        return Transaction.objects.filter(upload_id__account=self)
+
 
 class Statement(UserDataModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
@@ -180,7 +184,6 @@ class Upload(UserDataModel):
             t = Transaction(
                 user=self.user,
                 upload_id=self,
-                account=self.account,
                 date=r[columns[0]],
                 amount=r[columns[1]],
                 description=r[columns[2]]
@@ -215,9 +218,8 @@ class TransactionClass(models.Model):
         return self.get_name_display()
 
     def transactions(self, user):
-        subs = self.subcategory_set.filter(user=user)
-        patterns = chain(*[s.pattern_set.all() for s in subs])
-        return chain(*[p.transaction_set.all() for p in patterns])
+        return Transaction.objects.filter(
+            user=user, pattern__subcategory__class_field=self)
 
 
 class Budget(UserDataModel):
@@ -249,9 +251,9 @@ class Subcategory(UserDataModel):
     def get_absolute_url(self):
         return reverse('budget:subcategory-detail', kwargs={'pk': self.pk})
 
-    def transactions(self, user):
-        patterns = self.pattern_set.filter(user=user)
-        return chain(*[p.transaction_set.all() for p in patterns])
+    @property
+    def transaction_set(self):
+        return Transaction.objects.filter(pattern__subcategory=self)
 
 
 class Pattern(UserDataModel):
@@ -285,11 +287,12 @@ class Transaction(UserDataModel):
     amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
     description = models.TextField('Description')
     pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True)
+
     objects = TransactionManager()
 
     class Meta:
         ordering = ['-date']
-        unique_together = ('user', 'upload_id', 'date', 'amount', 'description')
+        unique_together = ('user', 'date', 'amount', 'description')
 
     def __str__(self):
         return f"{self.account} | {self.date} | {self.amount} | {self.description}"

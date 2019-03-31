@@ -16,7 +16,7 @@
         <li><a href="{% url 'budget:subcategory-list' %}">Back</a></li>
     </ul>
     <b>Transactions:</b>
-    {% for t in transactions %}
+    {% for t in subcategory.transaction_set.all %}
         <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
     {% endfor %}
 {% endblock %}
