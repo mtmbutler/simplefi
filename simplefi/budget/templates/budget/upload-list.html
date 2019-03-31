@@ -3,9 +3,9 @@
 {% block content %}
     <h2>Uploads</h2>
     <ul>
+        <li><a href="{% url 'budget:upload-add' %}">Add New</a></li>
         {% for upload in object_list %}
             <li><a href="{% url 'budget:upload-detail' upload.id %}">{{ upload }}</a></li>
         {% endfor %}
-        <li><a href="{% url 'budget:upload-add' %}">Add New</a></li>
     </ul>
 {% endblock %}

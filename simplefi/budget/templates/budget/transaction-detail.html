@@ -4,7 +4,7 @@
     <h2>Transaction Detail</h2>
     <p>
         <b>Upload batch:</b>
-        <span><a href="{% url 'budget:upload-detail' transaction.upload_id.id %}">{{ transaction.upload_id }}</a></span>
+        <span><a href="{% url 'budget:upload-detail' transaction.upload.id %}">{{ transaction.upload }}</a></span>
     </p>
     <p>
         <b>Account:</b>

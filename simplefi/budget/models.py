@@ -130,7 +130,7 @@ class Account(UserDataModel):
 
     @property
     def transaction_set(self):
-        return Transaction.objects.filter(upload_id__account=self)
+        return Transaction.objects.filter(upload__account=self)
 
 
 class Statement(UserDataModel):
@@ -159,6 +159,9 @@ class Upload(UserDataModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     csv = models.FileField(upload_to='csvs')
 
+    class Meta:
+        ordering = ['-upload_time']
+
     def __str__(self):
         return f"{self.upload_time.strftime('%Y-%m-%d %H:%M:%S (UTC)')} - {self.account}"
 
@@ -182,7 +185,7 @@ class Upload(UserDataModel):
         for i, r in df.iterrows():
             t = Transaction(
                 user=self.user,
-                upload_id=self,
+                upload=self,
                 date=r[columns[0]],
                 amount=r[columns[1]],
                 description=r[columns[2]]
@@ -293,7 +296,7 @@ class Pattern(UserDataModel):
 
 
 class Transaction(UserDataModel):
-    upload_id = models.ForeignKey(Upload, on_delete=models.CASCADE)
+    upload = models.ForeignKey(Upload, on_delete=models.CASCADE)
     date = models.DateField('Transaction Date')
     amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
     description = models.TextField('Description')
@@ -321,4 +324,4 @@ class Transaction(UserDataModel):
 
     @property
     def account(self):
-        return self.upload_id.account
+        return self.upload.account
