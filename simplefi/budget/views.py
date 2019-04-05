@@ -249,8 +249,8 @@ class ClassView(LoginRequiredMixin, generic.DetailView):
             user=self.request.user)
 
         # Get budget
-        context['budget'] = models.Budget.objects.get(
-            user=self.request.user, class_field=self.object)
+        context['budget'] = models.Budget.objects.filter(
+            user=self.request.user, class_field=self.object).first()
 
         # Add a dict of category names and pks
         context['categories'] = {

@@ -7,10 +7,12 @@
         <b>Name:</b>
         <span>{{ transactionclass }}</span>
     </p>
+    {% if budget %}
     <p>
         <b>Budget:</b>
         <span>{{ budget.value }} (<a href="{% url 'budget:budget-update' budget.id %}">update</a>)</span>
     </p>
+    {% endif %}
     <ul>
         <li><a href="{% url 'budget:class-list' %}">Back To Class List</a></li>
     </ul>
