@@ -1,10 +1,6 @@
-import datetime
-
 from django.db import models
 from django.urls import reverse
 from model_mommy import mommy
-
-from .models import Statement
 
 TEST_NAME = 'Scooby Doo'
 
@@ -33,12 +29,6 @@ def create_recursive_dependencies(model_obj):
         setattr(model_obj, f.name, o)
 
     return model_obj
-
-
-class TestModels:
-    def test_statement_date(self):
-        s = Statement(account=None, year=2000, month=1, balance=0.00)
-        assert s.date == datetime.date(year=2000, month=1, day=1)
 
 
 class TestDetailViews:
@@ -109,10 +99,52 @@ class TestDetailViews:
 
 
 class TestListViews:
-    def test_bank_list_view(self, client, django_user_model):
+    @staticmethod
+    def list_view_test(client, django_user_model, url, template):
         login(client, django_user_model)
-        response = client.get(reverse('budget:bank-list'))
-        assert response.status_code == 200
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_account_list_view(self, client, django_user_model):
+        url = 'budget:account-list'
+        template = 'budget/account-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_accountholder_list_view(self, client, django_user_model):
+        url = 'budget:accountholder-list'
+        template = 'budget/accountholder-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_bank_list_view(self, client, django_user_model):
+        url = 'budget:bank-list'
+        template = 'budget/bank-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_category_list_view(self, client, django_user_model):
+        url = 'budget:category-list'
+        template = 'budget/category-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_class_list_view(self, client, django_user_model):
+        url = 'budget:class-list'
+        template = 'budget/class-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_pattern_list_view(self, client, django_user_model):
+        url = 'budget:pattern-list'
+        template = 'budget/pattern-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_transaction_list_view(self, client, django_user_model):
+        url = 'budget:transaction-list'
+        template = 'budget/transaction-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_upload_list_view(self, client, django_user_model):
+        url = 'budget:upload-list'
+        template = 'budget/upload-list.html'
+        self.list_view_test(client, django_user_model, url, template)
 
 
 class TestCreateViews:
