@@ -149,36 +149,58 @@ class TestListViews:
 
 
 class TestCreateViews:
-    pass
-    # TODO: couldn't get the post to actually fill out the form
-    # def test_bank_create_view(self, client, django_user_model):
-    #     login(client, django_user_model)
-    #     assert Bank.objects.count() == 0
-    #
-    #     post_data = dict(
-    #         name='TestBank',
-    #         date_col_name='date',
-    #         amt_col_name='amount',
-    #         desc_col_name='description')
-    #     response = client.post(
-    #         reverse('budget:bank-add'), post_data,
-    #         content_type='application/json')
-    #     print(str(response.content).replace('\\n', '\n'))
-    #
-    #     data = response.json()
-    #     assert response.status_code == 201
-    #     assert Bank.objects.count() == 1
-    #     assert data == {
-    #         'count': 1,
-    #         'next': None,
-    #         'previous': None,
-    #         'results': [dict(
-    #             pk=1,
-    #             name='TestBank',
-    #             date_col_name='date',
-    #             amt_col_name='amount',
-    #             desc_col_name='description',
-    #             user_id=user.id)]}
+    @staticmethod
+    def create_view_test(client, django_user_model, model, url,
+                         template, user_required=True, obj_params=None):
+        # Make sure there are no existing objects
+        Model = apps.get_model(*model.split('.'))
+        Model.objects.all().delete()
+        assert Model.objects.count() == 0
+
+        # Check the create page
+        user = login(client, django_user_model)
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+        # Use the create page to create obj and assert success
+        response = client.post(reverse(url), data=obj_params)
+        try:
+            assert (
+                response.status_code == 302
+                and Model.objects.count() == 1)
+            if user_required:
+                obj = Model.objects.first()
+                assert obj.user == user
+        except AssertionError:
+            print(hr(response))
+            raise
+
+    def test_accountholder_create_view(self, client, django_user_model):
+        url = 'budget:accountholder-add'
+        model = 'budget.AccountHolder'
+        template = 'budget/accountholder-add.html'
+        obj_params = dict(name='TestObj')
+
+        self.create_view_test(
+            client, django_user_model, model, url, template,
+            obj_params=obj_params)
+
+    def test_category_create_view(self, client, django_user_model):
+        url = 'budget:category-add'
+        model = 'budget.Category'
+        template = 'budget/category-add.html'
+
+        # Parents
+        klass = mommy.make('budget.TransactionClass')
+        klass = create_recursive_dependencies(klass)
+        klass.save()
+
+        obj_params = dict(name='TestObj', class_field=klass.id)
+
+        self.create_view_test(
+            client, django_user_model, model, url, template,
+            obj_params=obj_params)
 
 
 class TestDeleteViews:
@@ -219,7 +241,7 @@ class TestDeleteViews:
         self.delete_view_test(client, django_user_model, model, url)
 
     def test_accountholder_delete_view(self, client, django_user_model):
-        model = 'budget.Accountholder'
+        model = 'budget.AccountHolder'
         url = 'budget:accountholder-delete'
         self.delete_view_test(client, django_user_model, model, url)
 
