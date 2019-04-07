@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import models
 from django.urls import reverse
 from model_mommy import mommy
@@ -178,3 +179,76 @@ class TestCreateViews:
     #             amt_col_name='amount',
     #             desc_col_name='description',
     #             user_id=user.id)]}
+
+
+class TestDeleteViews:
+    @staticmethod
+    def delete_view_test(client, django_user_model, model, url,
+                         user_required=True, obj_params=None):
+        # Make sure there are no existing objects
+        Model = apps.get_model(*model.split('.'))
+        Model.objects.all().delete()
+        assert Model.objects.count() == 0
+
+        # Create the object and assert success
+        if obj_params is None:
+            obj_params = dict()
+        user = login(client, django_user_model)
+        if user_required:
+            obj_params.update(user=user)
+        obj = mommy.make(model, **obj_params)
+        obj = create_recursive_dependencies(obj)
+        obj.save()
+        assert Model.objects.count() == 1
+
+        # Check the delete page
+        response = client.get(reverse(url, kwargs={'pk': obj.id}))
+        assert (
+            response.status_code == 200
+            and Model.objects.count() == 1)
+
+        # Delete the object and verify
+        response = client.post(reverse(url, kwargs={'pk': obj.id}))
+        assert (
+            response.status_code == 302
+            and Model.objects.count() == 0)
+
+    def test_account_delete_view(self, client, django_user_model):
+        model = 'budget.Account'
+        url = 'budget:account-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_accountholder_delete_view(self, client, django_user_model):
+        model = 'budget.Accountholder'
+        url = 'budget:accountholder-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_bank_delete_view(self, client, django_user_model):
+        model = 'budget.Bank'
+        url = 'budget:bank-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_category_delete_view(self, client, django_user_model):
+        model = 'budget.Category'
+        url = 'budget:category-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_pattern_delete_view(self, client, django_user_model):
+        model = 'budget.Pattern'
+        url = 'budget:pattern-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_statement_delete_view(self, client, django_user_model):
+        model = 'budget.Statement'
+        url = 'budget:statement-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_transaction_delete_view(self, client, django_user_model):
+        model = 'budget.Transaction'
+        url = 'budget:transaction-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_upload_delete_view(self, client, django_user_model):
+        model = 'budget.Upload'
+        url = 'budget:upload-delete'
+        self.delete_view_test(client, django_user_model, model, url)
