@@ -1,3 +1,4 @@
+import os
 import random
 import string
 
@@ -9,6 +10,7 @@ from model_mommy import mommy
 
 TEST_NAME = 'Scooby Doo'
 RAND_FILE_NAME_LENGTH = 20
+TEMP_DIR = 'tmp'
 
 
 def login(client, django_user_model):
@@ -57,8 +59,10 @@ def rand_str(n):
         for __ in range(n))
 
 
-def test_file(content=''):
-    path = rand_str(RAND_FILE_NAME_LENGTH) + '.txt'
+def temp_file(content=''):
+    if not os.path.exists(TEMP_DIR):
+        os.makedirs(TEMP_DIR)
+    path = os.path.join(TEMP_DIR, rand_str(RAND_FILE_NAME_LENGTH) + '.txt')
     if not content:
         content = rand_str(RAND_FILE_NAME_LENGTH)
     with open(path, 'w') as f:
@@ -329,7 +333,7 @@ class TestCreateViews:
         bank = acc.bank
         content = ','.join(
             [bank.date_col_name, bank.amt_col_name, bank.desc_col_name])
-        csv = test_file(content=content)
+        csv = temp_file(content=content)
 
         obj_params = dict(
             upload_time=today_str(), account=acc.id, csv=csv)
