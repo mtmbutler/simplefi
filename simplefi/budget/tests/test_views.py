@@ -1,9 +1,14 @@
+import random
+import string
+
 from django.apps import apps
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from model_mommy import mommy
 
 TEST_NAME = 'Scooby Doo'
+RAND_FILE_NAME_LENGTH = 20
 
 
 def login(client, django_user_model):
@@ -30,6 +35,35 @@ def create_recursive_dependencies(model_obj):
         setattr(model_obj, f.name, o)
 
     return model_obj
+
+
+def parent_obj_set(parent_models):
+    d = {}
+    for k in parent_models:
+        klass = mommy.make(k)
+        klass = create_recursive_dependencies(klass)
+        klass.save()
+        d[k] = klass
+    return d
+
+
+def today_str():
+    return timezone.now().strftime('%Y-%m-%d')
+
+
+def rand_str(n):
+    return ''.join(
+        random.choice(string.ascii_uppercase + string.digits)
+        for __ in range(n))
+
+
+def test_file(content=''):
+    path = rand_str(RAND_FILE_NAME_LENGTH) + '.txt'
+    if not content:
+        content = rand_str(RAND_FILE_NAME_LENGTH)
+    with open(path, 'w') as f:
+        f.write(content)
+    return path
 
 
 class TestDetailViews:
@@ -150,21 +184,27 @@ class TestListViews:
 
 class TestCreateViews:
     @staticmethod
-    def create_view_test(client, django_user_model, model, url,
-                         template, user_required=True, obj_params=None):
+    def create_view_test(client, model, url, template, user,
+                         user_required=True, obj_params=None,
+                         file_field=None):
         # Make sure there are no existing objects
         Model = apps.get_model(*model.split('.'))
         Model.objects.all().delete()
         assert Model.objects.count() == 0
 
         # Check the create page
-        user = login(client, django_user_model)
         response = client.get(reverse(url))
         tp_names = [t.name for t in response.templates]
         assert response.status_code == 200 and template in tp_names
 
         # Use the create page to create obj and assert success
-        response = client.post(reverse(url), data=obj_params)
+        if file_field:
+            with open(obj_params[file_field]) as f:
+                d = dict(obj_params)
+                d.update({file_field: f})
+                response = client.post(reverse(url), data=d)
+        else:
+            response = client.post(reverse(url), data=obj_params)
         try:
             assert (
                 response.status_code == 302
@@ -176,31 +216,127 @@ class TestCreateViews:
             print(hr(response))
             raise
 
+    def test_account_create_view(self, client, django_user_model):
+        url = 'budget:account-add'
+        model = 'budget.Account'
+        template = 'budget/account-add.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Bank', 'budget.AccountHolder']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            name='TestObj', bank=parents['budget.Bank'].id,
+            holder=parents['budget.AccountHolder'].id,
+            statement_date=1, date_opened=today_str(), annual_fee=0,
+            interest_rate=0, credit_line=0, min_pay_pct=0, min_pay_dlr=0,
+            priority=0)
+
+        self.create_view_test(
+            client, model, url, template, user,
+            obj_params=obj_params)
+
     def test_accountholder_create_view(self, client, django_user_model):
         url = 'budget:accountholder-add'
         model = 'budget.AccountHolder'
         template = 'budget/accountholder-add.html'
+        user = login(client, django_user_model)
         obj_params = dict(name='TestObj')
 
         self.create_view_test(
-            client, django_user_model, model, url, template,
+            client, model, url, template, user,
+            obj_params=obj_params)
+
+    def test_bank_create_view(self, client, django_user_model):
+        url = 'budget:bank-add'
+        model = 'budget.Bank'
+        template = 'budget/bank-add.html'
+        user = login(client, django_user_model)
+
+        obj_params = dict(
+            name='TestObj', date_col_name='Date', amt_col_name='Amt',
+            desc_col_name='Desc')
+
+        self.create_view_test(
+            client, model, url, template, user,
             obj_params=obj_params)
 
     def test_category_create_view(self, client, django_user_model):
         url = 'budget:category-add'
         model = 'budget.Category'
         template = 'budget/category-add.html'
+        user = login(client, django_user_model)
 
         # Parents
-        klass = mommy.make('budget.TransactionClass')
-        klass = create_recursive_dependencies(klass)
-        klass.save()
+        parent_models = ['budget.TransactionClass']
+        parents = parent_obj_set(parent_models)
 
-        obj_params = dict(name='TestObj', class_field=klass.id)
+        obj_params = dict(
+            name='TestObj', class_field=parents['budget.TransactionClass'].id)
 
         self.create_view_test(
-            client, django_user_model, model, url, template,
+            client, model, url, template, user,
             obj_params=obj_params)
+
+    def test_pattern_create_view(self, client, django_user_model):
+        url = 'budget:pattern-add'
+        model = 'budget.Pattern'
+        template = 'budget/pattern-add.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Category']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            pattern='TestObj', category=parents['budget.Category'].id)
+
+        self.create_view_test(
+            client, model, url, template, user,
+            obj_params=obj_params)
+
+    def test_statement_create_view(self, client, django_user_model):
+        url = 'budget:statement-add'
+        model = 'budget.Statement'
+        template = 'budget/statement-add.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Account']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            account=parents['budget.Account'].id,
+            year=2000, month=1, balance=0)
+
+        self.create_view_test(
+            client, model, url, template, user,
+            obj_params=obj_params)
+
+    def test_upload_create_view(self, client, django_user_model):
+        url = 'budget:upload-add'
+        model = 'budget.Upload'
+        template = 'budget/upload-add.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Account']
+        parents = parent_obj_set(parent_models)
+
+        # Create file
+        acc = parents['budget.Account']
+        bank = acc.bank
+        content = ','.join(
+            [bank.date_col_name, bank.amt_col_name, bank.desc_col_name])
+        csv = test_file(content=content)
+
+        obj_params = dict(
+            upload_time=today_str(), account=acc.id, csv=csv)
+
+        self.create_view_test(
+            client, model, url, template, user,
+            obj_params=obj_params, file_field='csv')
 
 
 class TestDeleteViews:

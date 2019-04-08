@@ -177,7 +177,10 @@ class Upload(UserDataModel):
             self.account.bank.desc_col_name
         ]
 
-        df = pd.read_csv(self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
+        try:
+            df = pd.read_csv(self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
+        except ValueError:
+            return  # TODO
         df.columns = [c.strip() for c in df.columns]
         df = df[columns]
 
