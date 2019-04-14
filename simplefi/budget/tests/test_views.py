@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 import string
@@ -341,6 +342,142 @@ class TestCreateViews:
         self.create_view_test(
             client, model, url, template, user,
             obj_params=obj_params, file_field='csv')
+
+
+class TestUpdateViews:
+    @staticmethod
+    def update_view_test(client, model, url, template, user,
+                         user_required=True, obj_params=None):
+        # Make sure there are no existing objects and make a new one
+        Model = apps.get_model(*model.split('.'))
+        Model.objects.all().delete()
+        assert Model.objects.count() == 0
+        create_kwargs = dict(_model=model)
+        if user_required:
+            create_kwargs.update(user=user)
+        obj = mommy.make(**create_kwargs)
+        create_recursive_dependencies(obj)
+        obj.save()
+
+        # Check the update page
+        response = client.get(reverse(url, kwargs={'pk': obj.pk}))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+        # Use the update page to update obj and assert success
+        response = client.post(reverse(url, kwargs={'pk': obj.pk}), data=obj_params)
+        try:
+            assert response.status_code == 302
+            obj = Model.objects.first()
+            for k, v in obj_params.items():
+                actual_val = getattr(obj, k)
+                if isinstance(actual_val, datetime.date):
+                    actual_val = actual_val.strftime('%Y-%m-%d')
+                if not isinstance(actual_val, models.Model):
+                    assert actual_val == v
+            if user_required:
+                assert obj.user == user
+        except AssertionError:
+            print(hr(response))
+            raise
+
+    def test_account_update_view(self, client, django_user_model):
+        url = 'budget:account-update'
+        model = 'budget.Account'
+        template = 'budget/account-update.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Bank', 'budget.AccountHolder']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            name='TestObj', bank=parents['budget.Bank'].id,
+            holder=parents['budget.AccountHolder'].id,
+            statement_date=1, date_opened=today_str(), annual_fee=0,
+            interest_rate=0, credit_line=0, min_pay_pct=0, min_pay_dlr=0,
+            priority=0)
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params)
+
+    def test_accountholder_update_view(self, client, django_user_model):
+        url = 'budget:accountholder-update'
+        model = 'budget.AccountHolder'
+        template = 'budget/accountholder-update.html'
+        user = login(client, django_user_model)
+        obj_params = dict(name='TestObj')
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params)
+
+    def test_bank_update_view(self, client, django_user_model):
+        url = 'budget:bank-update'
+        model = 'budget.Bank'
+        template = 'budget/bank-update.html'
+        user = login(client, django_user_model)
+
+        obj_params = dict(
+            name='TestObj', date_col_name='Date', amt_col_name='Amt',
+            desc_col_name='Desc')
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params)
+
+    def test_category_update_view(self, client, django_user_model):
+        url = 'budget:category-update'
+        model = 'budget.Category'
+        template = 'budget/category-update.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.TransactionClass']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            name='TestObj', class_field=parents['budget.TransactionClass'].id)
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params)
+
+    def test_pattern_update_view(self, client, django_user_model):
+        url = 'budget:pattern-update'
+        model = 'budget.Pattern'
+        template = 'budget/pattern-update.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Category']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            pattern='TestObj', category=parents['budget.Category'].id)
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params)
+
+    def test_statement_update_view(self, client, django_user_model):
+        url = 'budget:statement-update'
+        model = 'budget.Statement'
+        template = 'budget/statement-update.html'
+        user = login(client, django_user_model)
+
+        # Parents
+        parent_models = ['budget.Account']
+        parents = parent_obj_set(parent_models)
+
+        obj_params = dict(
+            account=parents['budget.Account'].id,
+            year=2000, month=1, balance=0)
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params)
 
 
 class TestDeleteViews:
