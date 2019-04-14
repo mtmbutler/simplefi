@@ -9,19 +9,11 @@ from django.urls import reverse
 from django.utils import timezone
 from model_mommy import mommy
 
+from budget.tests.utils import login
+
 TEST_NAME = 'Scooby Doo'
 RAND_FILE_NAME_LENGTH = 20
 TEMP_DIR = 'tmp'
-
-
-def login(client, django_user_model):
-    params = dict(
-        username="test",
-        password="testpw")
-    user = django_user_model.objects.create_user(**params)
-    client.login(**params)
-
-    return user
 
 
 def hr(response):
