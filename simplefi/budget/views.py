@@ -9,8 +9,8 @@ from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from . import models
-from .utils import one_year_summary, debt_summary
+from budget import models
+from budget.utils import one_year_summary
 
 
 def index(request):
@@ -99,39 +99,6 @@ class BankDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     template_name = 'budget/bank-delete.html'
 
 
-# -- ACCOUNT HOLDERS --
-class AccountHolderList(LoginRequiredMixin, AuthQuerySetMixin,
-                        generic.ListView):
-    model = models.AccountHolder
-    template_name = 'budget/accountholder-list.html'
-
-
-class AccountHolderView(LoginRequiredMixin, AuthQuerySetMixin,
-                        generic.DetailView):
-    model = models.AccountHolder
-    template_name = 'budget/accountholder-detail.html'
-
-
-class AccountHolderCreate(LoginRequiredMixin, AuthCreateFormMixin,
-                          AuthForeignKeyMixin, CreateView):
-    model = models.AccountHolder
-    fields = ['name']
-    template_name = 'budget/accountholder-add.html'
-
-
-class AccountHolderUpdate(LoginRequiredMixin, AuthQuerySetMixin,
-                          AuthForeignKeyMixin, UpdateView):
-    model = models.AccountHolder
-    fields = ['name']
-    template_name = 'budget/accountholder-update.html'
-
-
-class AccountHolderDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
-    model = models.AccountHolder
-    success_url = reverse_lazy('budget:accountholder-list')
-    template_name = 'budget/accountholder-delete.html'
-
-
 # -- ACCOUNTS --
 class AccountList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     model = models.Account
@@ -146,18 +113,14 @@ class AccountView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
 class AccountCreate(LoginRequiredMixin, AuthCreateFormMixin,
                     AuthForeignKeyMixin, CreateView):
     model = models.Account
-    fields = ['name', 'bank', 'holder', 'statement_date', 'date_opened',
-              'annual_fee', 'interest_rate', 'credit_line',
-              'min_pay_pct', 'min_pay_dlr', 'priority']
+    fields = ['name', 'bank']
     template_name = 'budget/account-add.html'
 
 
 class AccountUpdate(LoginRequiredMixin, AuthQuerySetMixin, AuthForeignKeyMixin,
                     UpdateView):
     model = models.Account
-    fields = ['name', 'bank', 'holder', 'statement_date', 'date_opened',
-              'annual_fee', 'interest_rate', 'credit_line',
-              'min_pay_pct', 'min_pay_dlr', 'priority']
+    fields = ['name', 'bank']
     template_name = 'budget/account-update.html'
 
 
@@ -165,27 +128,6 @@ class AccountDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Account
     success_url = reverse_lazy('budget:account-list')
     template_name = 'budget/account-delete.html'
-
-
-# -- STATEMENTS --
-class StatementCreate(LoginRequiredMixin, AuthCreateFormMixin,
-                      AuthForeignKeyMixin, CreateView):
-    model = models.Statement
-    fields = ['account', 'month', 'year', 'balance']
-    template_name = 'budget/statement-add.html'
-
-
-class StatementUpdate(LoginRequiredMixin, AuthQuerySetMixin,
-                      AuthForeignKeyMixin, UpdateView):
-    model = models.Statement
-    fields = ['account', 'month', 'year', 'balance']
-    template_name = 'budget/statement-update.html'
-
-
-class StatementDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
-    model = models.Statement
-    success_url = reverse_lazy('budget:account-list')
-    template_name = 'budget/statement-delete.html'
 
 
 # -- UPLOADS --
@@ -429,27 +371,4 @@ class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
             # Add a dict of category names and pks
             'classes': {c.name: c.id
                         for c in models.TransactionClass.objects.all()}}
-        return context
-
-
-class DebtSummary(LoginRequiredMixin, generic.TemplateView):
-    template_name = 'budget/debt_summary.html'
-
-    def get_context_data(self):
-        df = debt_summary(self.request.user)
-
-        # Convert (2018, 2) MultiIndex into "Feb 2018"
-        index_ = []
-        for i in df.index:
-            index_.append(str(calendar.month_abbr[i[1]]) + " " + str(i[0]))
-        context = {
-            'columns': df.columns.tolist(),
-            # Convert each row into a list of strings
-            # (formatted to 0 decimal places)
-            'data': {index_[i]: r.tolist()
-                     for i, (__, r) in enumerate(df.iterrows())},
-            # Add a dict of account name and pks
-            'accounts': {a.name: a.id
-                         for a in models.Account.objects.filter(
-                            user=self.request.user)}}
         return context

@@ -1,0 +1,37 @@
+{% extends "debt_base.html" %}
+
+{% block content %}
+    <h2>Credit Line Detail</h2>
+    <p>
+        <b>Name:</b>
+        <span>{{ creditline.name }}</span>
+    <br>        <b>Holder:</b>
+        <span><a href="{% url 'debt:accountholder-detail' creditline.holder_id %}">{{ creditline.holder }}</a></span>
+    <br>        <b>Date Opened:</b>
+        <span>{{ creditline.date_opened }}</span>
+    <br>        <b>Annual Fee:</b>
+        <span>{{ creditline.annual_fee }}</span>
+    <br>        <b>Interest Rate (%):</b>
+        <span>{{ creditline.interest_rate }}</span>
+    <br>        <b>Credit Line:</b>
+        <span>{{ creditline.credit_line }}</span>
+    <br>        <b>Minimum Payment (%):</b>
+        <span>{{ creditline.min_pay_pct }}</span>
+    <br>        <b>Minimum Payment ($):</b>
+        <span>{{ creditline.min_pay_dlr }}</span>
+    <br>        <b>Priority:</b>
+        <span>{{ creditline.priority }}</span>
+    <br>        <b>Available Credit:</b>
+        <span>{{ creditline.available_credit }}</span>
+    </p>
+    <ul>
+        <li><a href="{% url 'debt:account-update' creditline.id %}">Update</a></li>
+        <li><a href="{% url 'debt:account-delete' creditline.id %}">Delete</a></li>
+        <li><a href="{% url 'debt:account-list' %}">Back</a></li>
+    </ul>
+    <h2>Statements:</h2>
+    {% for s in creditline.statement_set.all %}
+        <li><a href="{% url 'debt:statement-update' s.id %}">{{ s }}</a></li>
+    {% endfor %}
+    <li><a href="{% url 'debt:statement-add' %}">Add Statement</a></li>
+{% endblock %}

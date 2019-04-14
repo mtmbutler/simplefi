@@ -1,4 +1,4 @@
-{% extends "budget_base.html" %}
+{% extends "debt_base.html" %}
 
 {% block content %}
     <h2>Update accountholder</h2>
@@ -7,6 +7,6 @@
         <input type="submit" value="Update">
     </form>
     <ul>
-        <li><a href="{% url 'budget:accountholder-detail' accountholder.id %}">Back</a></li>
+        <li><a href="{% url 'debt:accountholder-detail' accountholder.id %}">Back</a></li>
     </ul>
 {% endblock %}

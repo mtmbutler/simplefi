@@ -1,15 +1,15 @@
-{% extends "budget_base.html" %}
+{% extends "debt_base.html" %}
 
 {% block content %}
     <h2>Add account</h2>
     <p>
-        <a href="{% url 'budget:bank-list' %}">Manage Banks</a>
+        <br><a href="{% url 'debt:accountholder-list' %}">Manage Accountholders</a>
     </p>
     <form method="POST" class="post-form">{% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="save btn btn-default">Save</button>
     </form>
     <ul>
-        <li><a href="{% url 'budget:account-list' %}">Back</a></li>
+        <li><a href="{% url 'debt:account-list' %}">Back</a></li>
     </ul>
 {% endblock %}

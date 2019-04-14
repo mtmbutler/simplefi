@@ -15,6 +15,10 @@
       <div class="col-sm-2">
       {% block sidebar %}
         <ul class="sidebar-nav">
+            {% block topnav %}
+                <li><a href="{% url 'budget:index' %}">Budget</a></li>
+                <li><a href="{% url 'debt:index' %}">Debt</a></li>
+            {% endblock %}
             {% block nav %}{% endblock %}
             {% if user.is_authenticated %}
                 <li><a href="{% url 'logout' %}">Logout</a></li>

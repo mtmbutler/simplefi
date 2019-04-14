@@ -35,6 +35,7 @@ LOGIN_URL = reverse_lazy('login')
 LOGIN_REDIRECT_URL = reverse_lazy('index')
 
 INSTALLED_APPS = [
+    'debt.apps.DebtConfig',
     'budget.apps.BudgetConfig',
     'django.contrib.admin',
     'django.contrib.auth',

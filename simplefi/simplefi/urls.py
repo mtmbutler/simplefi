@@ -25,6 +25,7 @@ urlpatterns = [
          name='index'),
     path('auth/', include('django.contrib.auth.urls')),
     path('budget/', include('budget.urls')),
+    path('debt/', include('debt.urls')),
     path('admin/', admin.site.urls),
 ]
 

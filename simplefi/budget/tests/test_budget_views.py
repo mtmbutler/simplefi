@@ -75,17 +75,6 @@ class TestOtherViews:
         tp_names = [t.name for t in response.templates]
         assert response.status_code == 200 and template in tp_names
 
-    def test_debt_summary(self, client, django_user_model):
-        url = 'budget:debt-summary'
-        template = 'budget/debt_summary.html'
-
-        login(client, django_user_model)
-
-        # Check the page
-        response = client.get(reverse(url))
-        tp_names = [t.name for t in response.templates]
-        assert response.status_code == 200 and template in tp_names
-
     def test_one_year_summary(self, client, django_user_model):
         url = 'budget:one-year-summary'
         template = 'budget/one_year_summary.html'
@@ -121,12 +110,6 @@ class TestDetailViews:
         self.detail_view_test(
             client, django_user_model, 'budget.Bank',
             'budget:bank-detail', search_str=TEST_NAME,
-            obj_params={'name': TEST_NAME})
-
-    def test_accountholder_detail_view(self, client, django_user_model):
-        self.detail_view_test(
-            client, django_user_model, 'budget.AccountHolder',
-            'budget:accountholder-detail', search_str=TEST_NAME,
             obj_params={'name': TEST_NAME})
 
     def test_account_detail_view(self, client, django_user_model):
@@ -176,11 +159,6 @@ class TestListViews:
     def test_account_list_view(self, client, django_user_model):
         url = 'budget:account-list'
         template = 'budget/account-list.html'
-        self.list_view_test(client, django_user_model, url, template)
-
-    def test_accountholder_list_view(self, client, django_user_model):
-        url = 'budget:accountholder-list'
-        template = 'budget/accountholder-list.html'
         self.list_view_test(client, django_user_model, url, template)
 
     def test_bank_list_view(self, client, django_user_model):
@@ -255,26 +233,11 @@ class TestCreateViews:
         user = login(client, django_user_model)
 
         # Parents
-        parent_models = ['budget.Bank', 'budget.AccountHolder']
+        parent_models = ['budget.Bank']
         parents = parent_obj_set(parent_models)
 
         obj_params = dict(
-            name='TestObj', bank=parents['budget.Bank'].id,
-            holder=parents['budget.AccountHolder'].id,
-            statement_date=1, date_opened=today_str(), annual_fee=0,
-            interest_rate=0, credit_line=0, min_pay_pct=0, min_pay_dlr=0,
-            priority=0)
-
-        self.create_view_test(
-            client, model, url, template, user,
-            obj_params=obj_params)
-
-    def test_accountholder_create_view(self, client, django_user_model):
-        url = 'budget:accountholder-add'
-        model = 'budget.AccountHolder'
-        template = 'budget/accountholder-add.html'
-        user = login(client, django_user_model)
-        obj_params = dict(name='TestObj')
+            name='TestObj', bank=parents['budget.Bank'].id)
 
         self.create_view_test(
             client, model, url, template, user,
@@ -323,24 +286,6 @@ class TestCreateViews:
 
         obj_params = dict(
             pattern='TestObj', category=parents['budget.Category'].id)
-
-        self.create_view_test(
-            client, model, url, template, user,
-            obj_params=obj_params)
-
-    def test_statement_create_view(self, client, django_user_model):
-        url = 'budget:statement-add'
-        model = 'budget.Statement'
-        template = 'budget/statement-add.html'
-        user = login(client, django_user_model)
-
-        # Parents
-        parent_models = ['budget.Account']
-        parents = parent_obj_set(parent_models)
-
-        obj_params = dict(
-            account=parents['budget.Account'].id,
-            year=2000, month=1, balance=0)
 
         self.create_view_test(
             client, model, url, template, user,
@@ -417,26 +362,11 @@ class TestUpdateViews:
         user = login(client, django_user_model)
 
         # Parents
-        parent_models = ['budget.Bank', 'budget.AccountHolder']
+        parent_models = ['budget.Bank']
         parents = parent_obj_set(parent_models)
 
         obj_params = dict(
-            name='TestObj', bank=parents['budget.Bank'].id,
-            holder=parents['budget.AccountHolder'].id,
-            statement_date=1, date_opened=today_str(), annual_fee=0,
-            interest_rate=0, credit_line=0, min_pay_pct=0, min_pay_dlr=0,
-            priority=0)
-
-        self.update_view_test(
-            client, model, url, template, user,
-            user_required=True, obj_params=obj_params)
-
-    def test_accountholder_update_view(self, client, django_user_model):
-        url = 'budget:accountholder-update'
-        model = 'budget.AccountHolder'
-        template = 'budget/accountholder-update.html'
-        user = login(client, django_user_model)
-        obj_params = dict(name='TestObj')
+            name='TestObj', bank=parents['budget.Bank'].id)
 
         self.update_view_test(
             client, model, url, template, user,
@@ -463,11 +393,11 @@ class TestUpdateViews:
         user = login(client, django_user_model)
 
         # Parents
-        parent_models = ['budget.TransactionClass']
-        parents = parent_obj_set(parent_models)
+        # parent_models = ['budget.TransactionClass']
+        # parents = parent_obj_set(parent_models)
 
         obj_params = dict(
-            name='TestObj', class_field=parents['budget.TransactionClass'].id)
+            name='TestObj', class_field=1)
 
         self.update_view_test(
             client, model, url, template, user,
@@ -481,24 +411,6 @@ class TestUpdateViews:
 
         obj_params = dict(
             pattern='TestObj', category=1)
-
-        self.update_view_test(
-            client, model, url, template, user,
-            user_required=True, obj_params=obj_params)
-
-    def test_statement_update_view(self, client, django_user_model):
-        url = 'budget:statement-update'
-        model = 'budget.Statement'
-        template = 'budget/statement-update.html'
-        user = login(client, django_user_model)
-
-        # Parents
-        parent_models = ['budget.Account']
-        parents = parent_obj_set(parent_models)
-
-        obj_params = dict(
-            account=parents['budget.Account'].id,
-            year=2000, month=1, balance=0)
 
         self.update_view_test(
             client, model, url, template, user,
@@ -557,11 +469,6 @@ class TestDeleteViews:
         url = 'budget:account-delete'
         self.delete_view_test(client, django_user_model, model, url)
 
-    def test_accountholder_delete_view(self, client, django_user_model):
-        model = 'budget.AccountHolder'
-        url = 'budget:accountholder-delete'
-        self.delete_view_test(client, django_user_model, model, url)
-
     def test_bank_delete_view(self, client, django_user_model):
         model = 'budget.Bank'
         url = 'budget:bank-delete'
@@ -575,11 +482,6 @@ class TestDeleteViews:
     def test_pattern_delete_view(self, client, django_user_model):
         model = 'budget.Pattern'
         url = 'budget:pattern-delete'
-        self.delete_view_test(client, django_user_model, model, url)
-
-    def test_statement_delete_view(self, client, django_user_model):
-        model = 'budget.Statement'
-        url = 'budget:statement-delete'
         self.delete_view_test(client, django_user_model, model, url)
 
     def test_transaction_delete_view(self, client, django_user_model):

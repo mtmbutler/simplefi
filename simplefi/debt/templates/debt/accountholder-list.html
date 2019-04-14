@@ -1,0 +1,11 @@
+{% extends "debt_base.html" %}
+
+{% block content %}
+    <h2>Accountholders</h2>
+    <ul>
+        {% for accountholder in object_list %}
+            <li><a href="{% url 'debt:accountholder-detail' accountholder.id %}">{{ accountholder.name }}</a></li>
+        {% endfor %}
+        <li><a href="{% url 'debt:accountholder-add' %}">Add New</a></li>
+    </ul>
+{% endblock %}

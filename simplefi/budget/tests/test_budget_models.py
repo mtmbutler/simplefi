@@ -3,7 +3,6 @@ import datetime
 from django.apps import apps
 from model_mommy import mommy
 
-from budget.models import Statement
 from budget.tests.utils import login
 
 
@@ -11,30 +10,11 @@ DAYS_PER_YEAR = 365
 
 
 class TestMethods:
-    def test_account_balance(self):
-        pass
-
-    def test_account_available_credit(self):
-        pass
-
-    def test_account_earliest_statement_date(self):
-        pass
-
-    def test_account_min_pay(self):
-        pass
-
-    def test_account_forecast_next(self):
-        pass
-
     def test_upload_parse_transactions(self):
         pass
 
     def test_pattern_match_transactions(self):
         pass
-
-    def test_statement_date(self):
-        s = Statement(account=None, year=2000, month=1, balance=0.00)
-        assert s.date == datetime.date(year=2000, month=1, day=1)
 
 
 class TestManagers:

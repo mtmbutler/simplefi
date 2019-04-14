@@ -7,35 +7,12 @@
         <span>{{ account.name }}</span>
     <br>        <b>Bank:</b>
         <span><a href="{% url 'budget:bank-detail' account.bank.id %}">{{ account.bank }}</a></span>
-    <br>        <b>Holder:</b>
-        <span><a href="{% url 'budget:accountholder-detail' account.holder.id %}">{{ account.holder }}</a></span>
-    <br>        <b>Date Opened:</b>
-        <span>{{ account.date_opened }}</span>
-    <br>        <b>Annual Fee:</b>
-        <span>{{ account.annual_fee }}</span>
-    <br>        <b>Interest Rate (%):</b>
-        <span>{{ account.interest_rate }}</span>
-    <br>        <b>Credit Line:</b>
-        <span>{{ account.credit_line }}</span>
-    <br>        <b>Minimum Payment (%):</b>
-        <span>{{ account.min_pay_pct }}</span>
-    <br>        <b>Minimum Payment ($):</b>
-        <span>{{ account.min_pay_dlr }}</span>
-    <br>        <b>Priority:</b>
-        <span>{{ account.priority }}</span>
-    <br>        <b>Available Credit:</b>
-        <span>{{ account.available_credit }}</span>
     </p>
     <ul>
         <li><a href="{% url 'budget:account-update' account.id %}">Update</a></li>
         <li><a href="{% url 'budget:account-delete' account.id %}">Delete</a></li>
         <li><a href="{% url 'budget:account-list' %}">Back</a></li>
     </ul>
-    <h2>Statements:</h2>
-    {% for s in account.statement_set.all %}
-        <li><a href="{% url 'budget:statement-update' s.id %}">{{ s }}</a></li>
-    {% endfor %}
-    <li><a href="{% url 'budget:statement-add' %}">Add Statement</a></li>
     <h2>Transactions:</h2>
     {% for t in account.transaction_set.all %}
         <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
