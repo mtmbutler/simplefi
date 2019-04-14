@@ -71,6 +71,41 @@ def temp_file(content=''):
     return path
 
 
+class TestOtherViews:
+    def test_index(self, client, django_user_model):
+        url = 'budget:index'
+        template = 'budget/index.html'
+
+        login(client, django_user_model)
+
+        # Check the page
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_debt_summary(self, client, django_user_model):
+        url = 'budget:debt-summary'
+        template = 'budget/debt_summary.html'
+
+        login(client, django_user_model)
+
+        # Check the page
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_one_year_summary(self, client, django_user_model):
+        url = 'budget:one-year-summary'
+        template = 'budget/one_year_summary.html'
+
+        login(client, django_user_model)
+
+        # Check the page
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+
 class TestDetailViews:
     @staticmethod
     def detail_view_test(client, django_user_model, model, viewname,
@@ -347,7 +382,8 @@ class TestCreateViews:
 class TestUpdateViews:
     @staticmethod
     def update_view_test(client, model, url, template, user,
-                         user_required=True, obj_params=None):
+                         user_required=True, obj_params=None,
+                         create_recursive=True):
         # Make sure there are no existing objects and make a new one
         Model = apps.get_model(*model.split('.'))
         Model.objects.all().delete()
@@ -356,7 +392,8 @@ class TestUpdateViews:
         if user_required:
             create_kwargs.update(user=user)
         obj = mommy.make(**create_kwargs)
-        create_recursive_dependencies(obj)
+        if create_recursive:
+            create_recursive_dependencies(obj)
         obj.save()
 
         # Check the update page
@@ -450,12 +487,8 @@ class TestUpdateViews:
         template = 'budget/pattern-update.html'
         user = login(client, django_user_model)
 
-        # Parents
-        parent_models = ['budget.Category']
-        parents = parent_obj_set(parent_models)
-
         obj_params = dict(
-            pattern='TestObj', category=parents['budget.Category'].id)
+            pattern='TestObj', category=1)
 
         self.update_view_test(
             client, model, url, template, user,
@@ -478,6 +511,21 @@ class TestUpdateViews:
         self.update_view_test(
             client, model, url, template, user,
             user_required=True, obj_params=obj_params)
+
+    def test_budget_update_view(self, client, django_user_model):
+        url = 'budget:budget-update'
+        model = 'budget.Budget'
+        template = 'budget/budget-update.html'
+        user = login(client, django_user_model)
+
+        obj_params = dict(
+            class_field=1,
+            value=1000)
+
+        self.update_view_test(
+            client, model, url, template, user,
+            user_required=True, obj_params=obj_params,
+            create_recursive=False)
 
 
 class TestDeleteViews:
