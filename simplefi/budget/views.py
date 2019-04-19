@@ -4,17 +4,19 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django_filters.views import FilterView
+from django_tables2.views import SingleTableMixin
 
 from budget import models
+from budget import tables
 from budget.utils import one_year_summary
 
 
-def index(request):
-    return render(request, 'budget/index.html')
+class Index(LoginRequiredMixin, generic.TemplateView):
+    template_name = 'budget/index.html'
 
 
 class AuthQuerySetMixin:
@@ -329,9 +331,12 @@ class PatternDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- TRANSACTIONS --
-class TransactionList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
+class TransactionList(LoginRequiredMixin, AuthQuerySetMixin,
+                      SingleTableMixin, FilterView):
     model = models.Transaction
+    table_class = tables.TransactionTable
     template_name = 'budget/transaction-list.html'
+    filterset_class = tables.TransactionFilter
 
 
 class TransactionView(LoginRequiredMixin, AuthQuerySetMixin,

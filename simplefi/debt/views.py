@@ -3,7 +3,6 @@ import calendar
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
-from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -12,8 +11,8 @@ from debt import models
 from debt.utils import debt_summary
 
 
-def index(request):
-    return render(request, 'debt/index.html')
+class Index(LoginRequiredMixin, generic.TemplateView):
+    template_name = 'debt/index.html'
 
 
 class AuthQuerySetMixin:

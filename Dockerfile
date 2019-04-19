@@ -17,4 +17,3 @@ EXPOSE 8000
 
 # define the default command to run when starting the container
 CMD ["gunicorn", "--chdir", "simplefi", "--bind", ":8000", "simplefi.wsgi:application"]
-

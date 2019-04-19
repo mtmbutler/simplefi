@@ -4,7 +4,7 @@ from budget import views
 
 app_name = 'budget'
 urlpatterns = [
-    path('', views.index, name='index'),
+    path('', views.Index.as_view(), name='index'),
     
     # Banks
     path('banks/', views.BankList.as_view(), name='bank-list'),

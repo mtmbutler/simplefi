@@ -4,7 +4,7 @@ from debt import views
 
 app_name = 'debt'
 urlpatterns = [
-    path('', views.index, name='index'),
+    path('', views.Index.as_view(), name='index'),
 
     # Account holders
     path('accountholders/', views.AccountHolderList.as_view(), name='accountholder-list'),
