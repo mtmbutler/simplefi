@@ -1,10 +1,25 @@
 {% extends "budget_base.html" %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
 
 {% block content %}
     <h2>Classes</h2>
-    <ul>
-        {% for class in object_list %}
-            <li><a href="{% url 'budget:class-detail' class.id %}">{{ class }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-8">
+            {% render_table table 'django_tables2/bootstrap.html' %}
+          </div>
+          <div class="col-sm-4">
+            {% if filter %}
+              <form action="" method="get" class="form form-group">
+                {% bootstrap_form filter.form layout='horizontal' size='small' %}
+                {% bootstrap_button 'Filter' %}
+              </form>
+              <a href="{% url 'budget:class-list' %}">
+                {% bootstrap_button 'Clear' %}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
 {% endblock %}

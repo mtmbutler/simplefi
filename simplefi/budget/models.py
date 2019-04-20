@@ -174,6 +174,14 @@ class Budget(UserDataModel):
     def __str__(self):
         return f"{self.class_field} - {self.value}"
 
+    @property
+    def num_class_transactions(self):
+        return self.class_field.transactions(user=self.user).count()
+
+    @property
+    def fmt_value(self):
+        return locale.currency(self.value, grouping=True)
+
     def get_absolute_url(self):
         return reverse('budget:class-detail', kwargs={'pk': self.class_field_id})
 

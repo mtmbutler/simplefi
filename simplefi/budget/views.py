@@ -8,7 +8,7 @@ from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView
-from django_tables2.views import SingleTableMixin
+from django_tables2.views import SingleTableMixin, SingleTableView
 
 from budget import models
 from budget import tables
@@ -175,9 +175,14 @@ class BudgetUpdate(LoginRequiredMixin, AuthQuerySetMixin,
     template_name = 'budget/budget-update.html'
 
 
-class ClassList(LoginRequiredMixin, generic.ListView):
-    model = models.TransactionClass
+class ClassList(LoginRequiredMixin, SingleTableView):
+    model = models.Budget
+    table_class = tables.ClassTable
     template_name = 'budget/class-list.html'
+
+    def get_table_data(self):
+        qs = super().get_table_data()
+        return qs.filter(user=self.request.user)
 
 
 class ClassView(LoginRequiredMixin, generic.DetailView):
