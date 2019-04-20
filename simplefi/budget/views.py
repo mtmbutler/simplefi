@@ -133,9 +133,15 @@ class AccountDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- UPLOADS --
-class UploadList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
+class UploadList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = models.Upload
+    table_class = tables.UploadTable
     template_name = 'budget/upload-list.html'
+    filterset_class = tables.UploadFilter
+
+    def get_table_data(self):
+        qs = super().get_table_data()
+        return qs.filter(user=self.request.user)
 
 
 class UploadView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
