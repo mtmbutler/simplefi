@@ -331,12 +331,15 @@ class PatternDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- TRANSACTIONS --
-class TransactionList(LoginRequiredMixin, AuthQuerySetMixin,
-                      SingleTableMixin, FilterView):
+class TransactionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = models.Transaction
     table_class = tables.TransactionTable
     template_name = 'budget/transaction-list.html'
     filterset_class = tables.TransactionFilter
+
+    def get_table_data(self):
+        qs = super().get_table_data()
+        return qs.filter(user=self.request.user)
 
 
 class TransactionView(LoginRequiredMixin, AuthQuerySetMixin,

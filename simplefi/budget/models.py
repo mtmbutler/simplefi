@@ -1,10 +1,13 @@
 import datetime
+import locale
 
 import pandas as pd
 from django.conf import settings
 from django.db import models, IntegrityError
 from django.urls import reverse
 from django.utils import timezone
+
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 
 class TransactionManager(models.Manager):
@@ -82,10 +85,17 @@ class Upload(UserDataModel):
         ordering = ['-upload_time']
 
     def __str__(self):
-        return f"{self.upload_time.strftime('%Y-%m-%d %H:%M:%S (UTC)')} - {self.account}"
+        return (
+            self.upload_time
+            .astimezone(timezone.get_current_timezone())
+            .strftime('%d %b %Y - %-I:%M %p'))
 
     def get_absolute_url(self):
         return reverse('budget:upload-detail', kwargs={'pk': self.pk})
+
+    @property
+    def num_transactions(self):
+        return self.transaction_set.count()
 
     def parse_transactions(self):
         # TODO: catch all the errors
@@ -178,7 +188,7 @@ class Category(UserDataModel):
         verbose_name_plural = "categories"
 
     def __str__(self):
-        return f"{self.class_field}/{self.name}"
+        return self.name
 
     def get_absolute_url(self):
         return reverse('budget:category-detail', kwargs={'pk': self.pk})
@@ -218,8 +228,10 @@ class Pattern(UserDataModel):
 
 
 class Transaction(UserDataModel):
+    DESC_TRUNC_LEN = 30
+
     upload = models.ForeignKey(Upload, on_delete=models.CASCADE)
-    date = models.DateField('Transaction Date')
+    date = models.DateField('Transaction date')
     amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
     description = models.TextField('Description')
     pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True)
@@ -247,3 +259,14 @@ class Transaction(UserDataModel):
     @property
     def account(self):
         return self.upload.account
+
+    @property
+    def fmt_amt(self):
+        return locale.currency(self.amount, grouping=True)
+
+    @property
+    def trunc_desc(self):
+        if len(self.description) <= self.DESC_TRUNC_LEN:
+            return self.description
+        else:
+            return self.description[:self.DESC_TRUNC_LEN] + '...'
