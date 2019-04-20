@@ -194,6 +194,10 @@ class Category(UserDataModel):
         return reverse('budget:category-detail', kwargs={'pk': self.pk})
 
     @property
+    def num_transactions(self):
+        return self.transaction_set.count()
+
+    @property
     def transaction_set(self):
         return Transaction.objects.filter(pattern__category=self)
 

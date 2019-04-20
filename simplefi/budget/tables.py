@@ -21,6 +21,29 @@ def no_filter(model):
     return f
 
 
+# -- CATEGORIES --
+class CategoryFilter(filters.FilterSet):
+    class_field = filters.ModelChoiceFilter(
+        queryset=no_filter('budget.TransactionClass'), label='Class')
+
+
+class CategoryTable(tables.Table):
+    class_ = tables.Column(
+        accessor='class_field',
+        linkify=("budget:class-detail", {"pk": tables.A("class_field.pk")}))
+    name = tables.Column(
+        verbose_name='Category', accessor='name',
+        linkify=("budget:category-detail", {"pk": tables.A("pk")}))
+    num_transactions = tables.Column(
+        verbose_name='Transactions', accessor='num_transactions',
+        orderable=False)
+
+    class Meta:
+        model = models.Category
+        exclude = ('user', 'id')
+        fields = ['class_', 'name', 'num_transactions']
+
+
 # -- PATTERNS --
 class PatternFilter(filters.FilterSet):
     category__class_field = filters.ModelChoiceFilter(
