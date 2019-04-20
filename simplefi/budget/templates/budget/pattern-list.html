@@ -1,18 +1,9 @@
 {% extends "budget_base.html" %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
 
 {% block content %}
-    {# -- BUTTONS -- #}
-    <p><b><a href="{% url 'budget:declassify' %}">
-            Declassify All
-        </a> |
-
-        <a href="{% url 'budget:classify' %}">
-            Classify
-        </a> |
-        <a href="{% url 'budget:pattern-add' %}">
-            Add New Pattern
-        </a>
-    </b></p>
+    <h2>Patterns</h2>
 
     {# -- UNMATCHED TRANSACTIONS -- #}
     <p><b>Unmatched transactions: {{ num_unmatched_transactions }}</b></p>
@@ -22,12 +13,28 @@
         {% endfor %}
     </ul>
 
+    {# -- BUTTONS -- #}
+    <a href="{% url 'budget:declassify' %}">{% bootstrap_button 'Declassify All' %}</a>
+    <a href="{% url 'budget:classify' %}">{% bootstrap_button 'Classify' %}</a>
+    <a href="{% url 'budget:pattern-add' %}">{% bootstrap_button 'Add New Pattern' %}</a>
+
     {# -- PATTERN LIST -- #}
-    <h2>Patterns</h2>
-    <ul>
-        {% for pattern in object_list %}
-            <li><a href="{% url 'budget:pattern-detail' pattern.id %}">{{ pattern }}</a></li>
-        {% endfor %}
-        <li><a href="{% url 'budget:pattern-add' %}">Add New</a></li>
-    </ul>
+    <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-8">
+            {% render_table table 'django_tables2/bootstrap.html' %}
+          </div>
+          <div class="col-sm-4">
+            {% if filter %}
+              <form action="" method="get" class="form form-group">
+                {% bootstrap_form filter.form layout='horizontal' size='small' %}
+                {% bootstrap_button 'Filter' %}
+              </form>
+              <a href="{% url 'budget:pattern-list' %}">
+                {% bootstrap_button 'Clear' %}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
 {% endblock %}

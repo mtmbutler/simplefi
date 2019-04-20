@@ -212,6 +212,10 @@ class Pattern(UserDataModel):
     def class_field(self):
         return self.category.class_field
 
+    @property
+    def num_transactions(self):
+        return self.transaction_set.count()
+
     def get_absolute_url(self):
         return reverse('budget:pattern-detail', kwargs={'pk': self.pk})
 

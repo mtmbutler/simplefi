@@ -281,14 +281,20 @@ class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class PatternList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
+class PatternList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = models.Pattern
+    table_class = tables.PatternTable
     template_name = 'budget/pattern-list.html'
+    filterset_class = tables.PatternFilter
+
+    def get_table_data(self):
+        qs = super().get_table_data()
+        return qs.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
-        context = super(PatternList, self).get_context_data(**kwargs)
-        li = models.Transaction.objects.filter(user=self.request.user,
-                                               pattern=None)
+        context = super().get_context_data(**kwargs)
+        li = models.Transaction.objects.filter(
+            user=self.request.user, pattern=None)
         context['unmatched_transaction_list'] = li
         context['num_unmatched_transactions'] = len(li)
         return context

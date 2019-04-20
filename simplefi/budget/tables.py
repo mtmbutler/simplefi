@@ -21,6 +21,35 @@ def no_filter(model):
     return f
 
 
+# -- PATTERNS --
+class PatternFilter(filters.FilterSet):
+    category__class_field = filters.ModelChoiceFilter(
+        queryset=no_filter('budget.TransactionClass'), label='Class')
+    category = filters.ModelChoiceFilter(
+        queryset=user_filter('budget.Category'), label='Category')
+
+
+class PatternTable(tables.Table):
+    class_ = tables.Column(
+        accessor='class_field', orderable=False,
+        linkify=("budget:class-detail", {"pk": tables.A("class_field.pk")}))
+    category = tables.Column(
+        accessor='category', orderable=False,
+        linkify=("budget:category-detail", {"pk": tables.A("category.pk")}))
+    pattern = tables.Column(
+        verbose_name='Pattern', accessor='pattern',
+        linkify=("budget:pattern-detail", {"pk": tables.A("pk")}))
+    num_transactions = tables.Column(
+        verbose_name='Transactions', accessor='num_transactions',
+        orderable=False)
+
+    class Meta:
+        model = models.Pattern
+        exclude = ('user', 'id')
+        fields = ['class_', 'category', 'pattern', 'num_transactions']
+
+
+# -- TRANSACTIONS --
 class TransactionFilter(filters.FilterSet):
     upload = filters.ModelChoiceFilter(
         queryset=user_filter('budget.Upload'), label='Upload')
