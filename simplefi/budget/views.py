@@ -102,9 +102,15 @@ class BankDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- ACCOUNTS --
-class AccountList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
+class AccountList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = models.Account
+    table_class = tables.AccountTable
     template_name = 'budget/account-list.html'
+    filterset_class = tables.AccountFilter
+
+    def get_table_data(self):
+        qs = super().get_table_data()
+        return qs.filter(user=self.request.user)
 
 
 class AccountView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):

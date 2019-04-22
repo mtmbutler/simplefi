@@ -7,7 +7,7 @@ from django.db import models, IntegrityError
 from django.urls import reverse
 from django.utils import timezone
 
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Todo: set by user
 
 
 class TransactionManager(models.Manager):
@@ -74,6 +74,10 @@ class Account(UserDataModel):
     @property
     def transaction_set(self):
         return Transaction.objects.filter(upload__account=self)
+
+    @property
+    def num_transactions(self):
+        return self.transaction_set.count()
 
 
 class Upload(UserDataModel):

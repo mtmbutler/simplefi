@@ -21,6 +21,29 @@ def no_filter(model):
     return f
 
 
+# -- ACCOUNTS --
+class AccountFilter(filters.FilterSet):
+    bank = filters.ModelChoiceFilter(
+        queryset=user_filter('budget.Bank'), label='Bank')
+
+
+class AccountTable(tables.Table):
+    bank = tables.Column(
+        accessor='bank',
+        linkify=("budget:bank-detail", {"pk": tables.A("bank.pk")}))
+    name = tables.Column(
+        accessor='name',
+        linkify=("budget:account-detail", {"pk": tables.A("pk")}))
+    num_transactions = tables.Column(
+        verbose_name='Transactions', accessor='num_transactions',
+        orderable=False)
+
+    class Meta:
+        model = models.Account
+        exclude = ('user', 'id')
+        fields = ['bank', 'name', 'num_transactions']
+
+
 # -- UPLOADS --
 class UploadFilter(filters.FilterSet):
     account = filters.ModelChoiceFilter(
