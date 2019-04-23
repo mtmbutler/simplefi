@@ -8,6 +8,7 @@ from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView
+from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
 
 from budget import models
@@ -102,7 +103,8 @@ class BankDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- ACCOUNTS --
-class AccountList(LoginRequiredMixin, SingleTableMixin, FilterView):
+class AccountList(LoginRequiredMixin, SingleTableMixin, FilterView,
+                  ExportMixin):
     model = models.Account
     table_class = tables.AccountTable
     template_name = 'budget/account-list.html'
