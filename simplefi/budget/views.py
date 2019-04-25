@@ -1,19 +1,23 @@
 import calendar
+import datetime
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView
+from django_tables2 import Column
 from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
 
 from budget import models
 from budget import tables
-from budget.utils import one_year_summary
+from budget.utils import (
+    oys_qs, thirteen_months_ago, first_day_month_after)
 
 
 class Index(LoginRequiredMixin, generic.TemplateView):
@@ -388,26 +392,27 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- SUMMARIES --
-class OneYearSummary(LoginRequiredMixin, generic.TemplateView):
+class OneYearSummary(LoginRequiredMixin, SingleTableView):
     template_name = 'budget/one_year_summary.html'
+    table_class = tables.SummaryTable
 
-    def get_context_data(self):
-        df = one_year_summary(user=self.request.user)
+    def get_queryset(self):
+        return oys_qs(user=self.request.user)
 
-        # Convert (2018, 2) MultiIndex into "Feb 2018"
+    def get_table_kwargs(self):
+        fmt = '%b_%y'
+        orig = thirteen_months_ago()
+        first = datetime.date(year=orig.year, month=orig.month, day=1)
+        now = timezone.now()
+        last = datetime.date(year=now.year, month=now.month, day=1)
+
+        # Add each month to the header
         cols = []
-        for i in df.columns:
-            if i[1] in range(1, 13):
-                cols.append(str(calendar.month_abbr[i[1]]) + " " + str(i[0]))
-            else:
-                cols.append(i[0])
-        context = {
-            'columns': cols,
-            # Convert each row into a list of strings
-            # (formatted to 0 decimal places)
-            'data': {i: [f'{f:.0f}' for f in r]
-                     for i, r in df.iterrows()},
-            # Add a dict of category names and pks
-            'classes': {c.name: c.id
-                        for c in models.TransactionClass.objects.all()}}
-        return context
+        cur = first
+        while cur <= last:
+            cols.append(cur.strftime(fmt))
+            cur = first_day_month_after(cur)
+
+        extra_cols = [
+            (c, Column(attrs={'td': dict(align='right')})) for c in cols]
+        return dict(extra_columns=extra_cols)

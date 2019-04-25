@@ -1,49 +1,67 @@
-import numpy as np
-import pandas as pd
+import datetime
 
-from budget.models import Transaction
+import pandas as pd
+from django.apps import apps
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 
 MAX_ROWS = 120
 
 
-def one_year_summary(user, class_field=None):
-    """Generates a DataFrame summarizing the last 13 months."""
-    li = Transaction.objects.in_last_thirteen_months(user)
-    if not li.exists():
-        return pd.DataFrame()
-
-    # Build DataFrame from query set
-    if class_field is None:  # All
-        df = pd.DataFrame([
-            {'date': t.date,
-             'amount': t.amount,
-             'class_field': t.class_field.name}
-            for t in li
-        ])
+def first_day_month_after(dt):
+    if dt.month == 12:
+        year = dt.year + 1
+        month = 1
     else:
-        df = pd.DataFrame([
-            {'date': t.date,
-             'amount': t.amount,
-             'category': t.category.name}
-            for t in li.filter(pattern__category__class_field=class_field)
-        ])
+        year = dt.year
+        month = dt.month + 1
 
-    if df.empty:
-        return df
+    return datetime.date(year, month, 1)
 
-    # Add datetime columns for grouping
-    df['date'] = pd.to_datetime(df['date'])
-    df['month'] = df['date'].dt.month
-    df['year'] = df['date'].dt.year
+
+def thirteen_months_ago():
+    now = timezone.now()
+
+    # Logic
+    first_day_this_month = datetime.datetime(
+        year=now.year, month=now.month, day=1, tzinfo=now.tzinfo
+    )
+    last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
+    first_day_last_month = datetime.datetime(
+        year=last_day_last_month.year,
+        month=last_day_last_month.month,
+        day=1,
+        tzinfo=now.tzinfo
+    )
+    return first_day_last_month - datetime.timedelta(days=365)
+
+
+def oys_qs(user):
+    Transaction = apps.get_model('budget.Transaction')
+    base_qs = Transaction.objects.in_last_thirteen_months(user)
+
+    # Group by
+    grp_qs = (
+        base_qs
+            .annotate(month=TruncMonth('date'))
+            .values('pattern__category__class_field__name', 'month')
+            .annotate(s=Sum('amount'))
+            # https://docs.djangoproject.com/en/dev/topics/db/aggregation/#interaction-with-default-ordering-or-order-by
+            .order_by())
 
     # Pivot
-    index = 'class_field' if class_field is None else 'category'
-    pivot = pd.pivot_table(df, values='amount', index=index,
-                           columns=['year', 'month'], aggfunc=np.sum)
-    pivot = pivot.fillna(0)
+    piv = pd.DataFrame(grp_qs).pivot(
+        index='pattern__category__class_field__name',
+        values='s', columns='month')
+    piv = piv.fillna(0).astype(int)
+    piv.loc['Total'] = piv.sum()  # Add total row
 
-    # Add total row
-    pivot.loc['Total', :] = pivot.sum()
+    # Rename and convert back to list of dicts
+    piv.index.name = 'class_'
+    piv.index = piv.index.str.title()
+    piv.columns = [c.strftime('%b_%y') for c in piv.columns]
+    new_qs = piv.reset_index().to_dict('records')
 
-    return pivot
+    return new_qs

@@ -1,4 +1,3 @@
-import datetime
 import locale
 
 import pandas as pd
@@ -7,31 +6,19 @@ from django.db import models, IntegrityError
 from django.urls import reverse
 from django.utils import timezone
 
+from budget.utils import thirteen_months_ago
+
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Todo: set by user
 
 
 class TransactionManager(models.Manager):
     @staticmethod
     def in_last_thirteen_months(user):
-        now = timezone.now()
-
-        # Logic
-        first_day_this_month = datetime.datetime(
-            year=now.year, month=now.month, day=1, tzinfo=now.tzinfo
-        )
-        last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
-        first_day_last_month = datetime.datetime(
-            year=last_day_last_month.year,
-            month=last_day_last_month.month,
-            day=1,
-            tzinfo=now.tzinfo
-        )
-        start_date = first_day_last_month - datetime.timedelta(days=365)
-
         return Transaction.objects.filter(
             user=user,
-            date__range=[d.strftime("%Y-%m-%d") for d in [start_date, now]]
-        )
+            date__range=[
+                d.strftime("%Y-%m-%d")
+                for d in [thirteen_months_ago(), timezone.now()]])
 
 
 class UserDataModel(models.Model):
@@ -166,6 +153,9 @@ class TransactionClass(models.Model):
     def transactions(self, user):
         return Transaction.objects.filter(
             user=user, pattern__category__class_field=self)
+
+    def get_absolute_url(self):
+        return reverse('budget:class-detail', kwargs={'pk': self.pk})
 
 
 class Budget(UserDataModel):

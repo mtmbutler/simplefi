@@ -1,6 +1,7 @@
 import django_filters as filters
 import django_tables2 as tables
 from django.apps import apps
+from django.urls import reverse
 
 from budget import models
 
@@ -19,6 +20,12 @@ def no_filter(model):
     def f(__):
         return Model.objects.all()
     return f
+
+
+class SummingColumn(tables.Column):
+    @staticmethod
+    def render_footer(bound_column, table):
+        return sum(bound_column.accessor.resolve(row) for row in table.data)
 
 
 # -- ACCOUNTS --
@@ -182,3 +189,20 @@ class TransactionTable(tables.Table):
         fields = [
             'upload', 'account', 'class_', 'category', 'date', 'amount',
             'description']
+
+
+# -- SUMMARIES --
+def linkify_class_by_name(name):
+    model = apps.get_model('budget.TransactionClass')
+    qs = model.objects.filter(name=name)
+    if qs.count() != 1:
+        print(qs.count())
+        return reverse('budget:one-year-summary')
+    return qs.first().get_absolute_url()
+
+
+class SummaryTable(tables.Table):
+    class_ = tables.Column(
+        accessor='class_',
+        linkify=lambda record: linkify_class_by_name(
+            record["class_"].lower()))
