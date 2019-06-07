@@ -1,4 +1,3 @@
-import calendar
 import datetime
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -10,7 +9,7 @@ from django.utils import timezone
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView
-from django_tables2 import Column
+from django_tables2 import Column, Table
 from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
 
@@ -203,52 +202,50 @@ class ClassList(LoginRequiredMixin, SingleTableView):
         return qs.filter(user=self.request.user)
 
 
-class ClassView(LoginRequiredMixin, generic.DetailView):
+class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
     model = models.TransactionClass
     template_name = 'budget/class-detail.html'
 
+    table_class = tables.ClassSummaryTable
+
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
 
-        # Get user's transactions
-        context['transactions'] = self.object.transactions(
-            user=self.request.user)
+        fmt = '%b_%y'
+        orig = thirteen_months_ago()
+        first = datetime.date(year=orig.year, month=orig.month, day=1)
+        now = timezone.now()
+        last = datetime.date(year=now.year, month=now.month, day=1)
 
-        # Get budget
-        context['budget'] = models.Budget.objects.filter(
+        # Add each month to the header
+        cols = []
+        cur = first
+        while cur <= last:
+            cols.append(cur.strftime(fmt))
+            cur = first_day_month_after(cur)
+
+        extra_cols = [
+            (c, Column(attrs={'td': dict(align='right')})) for c in cols]
+        qs = oys_qs(user=self.request.user,
+                    class_id=self.object.id)
+        t = self.table_class(
+            data=qs,
+            extra_columns=extra_cols)
+        context['table'] = t
+        return context
+
+    def budget(self):
+        return models.Budget.objects.filter(
             user=self.request.user, class_field=self.object).first()
 
-        # Add a dict of category names and pks
-        context['categories'] = {
-            sc.name: sc.id
-            for sc in self.object.category_set.all()
+    def categories(self):
+        return {
+            c.name: c.id
+            for c in self.object.category_set.all()
         }
 
-        if context['categories']:  # Has categories
-            df = one_year_summary(
-                user=self.request.user,
-                class_field=models.TransactionClass.objects.get(
-                    name=self.object.name))
-
-            # Convert (2018, 2) MultiIndex into "Feb 2018"
-            cols = []
-            for i in df.columns:
-                if i[1] in range(1, 13):
-                    cols.append(str(calendar.month_abbr[i[1]]) + " " + str(i[0]))
-                else:
-                    cols.append(i[0])
-            context.update({
-                'columns': cols,
-                # Convert each row into a list of strings
-                # (formatted to 0 decimal places)
-                'data': {i: [f'{f:.0f}' for f in r]
-                         for i, r in df.iterrows()}
-            })
-        else:
-            context['columns'] = []
-            context['data'] = {}
-        return context
+    def transactions(self):
+        return self.object.transactions(user=self.request.user)
 
 
 # -- CATEGORIES --
@@ -397,7 +394,8 @@ class OneYearSummary(LoginRequiredMixin, SingleTableView):
     table_class = tables.SummaryTable
 
     def get_queryset(self):
-        return oys_qs(user=self.request.user)
+        qs = oys_qs(user=self.request.user)
+        return qs
 
     def get_table_kwargs(self):
         fmt = '%b_%y'

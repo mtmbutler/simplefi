@@ -13,12 +13,13 @@ locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Todo: set by user
 
 class TransactionManager(models.Manager):
     @staticmethod
-    def in_last_thirteen_months(user):
+    def in_last_thirteen_months(user, **kwargs):
         return Transaction.objects.filter(
             user=user,
             date__range=[
                 d.strftime("%Y-%m-%d")
-                for d in [thirteen_months_ago(), timezone.now()]])
+                for d in [thirteen_months_ago(), timezone.now()]],
+            **kwargs)
 
 
 class UserDataModel(models.Model):

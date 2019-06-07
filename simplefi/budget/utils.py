@@ -38,28 +38,42 @@ def thirteen_months_ago():
     return first_day_last_month - datetime.timedelta(days=365)
 
 
-def oys_qs(user):
+def oys_qs(user, class_id=None):
     Transaction = apps.get_model('budget.Transaction')
-    base_qs = Transaction.objects.in_last_thirteen_months(user)
+
+    if class_id is None:
+        base_qs = Transaction.objects.in_last_thirteen_months(user)
+    else:
+        base_qs = Transaction.objects.in_last_thirteen_months(
+            user,
+            pattern__category__class_field_id=class_id)
+
+    if class_id is None:
+        ix = 'pattern__category__class_field__name'
+    else:
+        ix = 'pattern__category__name'
 
     # Group by
     grp_qs = (
         base_qs
-            .annotate(month=TruncMonth('date'))
-            .values('pattern__category__class_field__name', 'month')
-            .annotate(s=Sum('amount'))
-            # https://docs.djangoproject.com/en/dev/topics/db/aggregation/#interaction-with-default-ordering-or-order-by
-            .order_by())
+        .annotate(month=TruncMonth('date'))
+        .values(ix, 'month')
+        .annotate(s=Sum('amount'))
+        # https://docs.djangoproject.com/en/dev/topics/db/aggregation/#interaction-with-default-ordering-or-order-by
+        .order_by())
 
     # Pivot
     piv = pd.DataFrame(grp_qs).pivot(
-        index='pattern__category__class_field__name',
+        index=ix,
         values='s', columns='month')
     piv = piv.fillna(0).astype(int)
     piv.loc['Total'] = piv.sum()  # Add total row
 
     # Rename and convert back to list of dicts
-    piv.index.name = 'class_'
+    if class_id is None:
+        piv.index.name = 'class_'
+    else:
+        piv.index.name = 'category'
     piv.index = piv.index.str.title()
     piv.columns = [c.strftime('%b_%y') for c in piv.columns]
     new_qs = piv.reset_index().to_dict('records')
