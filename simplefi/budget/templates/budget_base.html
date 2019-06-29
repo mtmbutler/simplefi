@@ -6,9 +6,9 @@
 {% endblock %}
 
 {% block nav %}
+    <a href="{% url 'budget:index' %}">Summary</a>
     <a href="{% url 'budget:account-list' %}">Accounts</a>
     <a href="{% url 'budget:upload-list' %}">Uploads</a>
-    <a href="{% url 'budget:category-list' %}">Categories</a>
     <a href="{% url 'budget:pattern-list' %}">Patterns</a>
     <a href="{% url 'budget:transaction-list' %}">Transactions</a>
 {% endblock %}

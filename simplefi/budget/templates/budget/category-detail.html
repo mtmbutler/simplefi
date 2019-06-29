@@ -13,7 +13,6 @@
     <ul>
         <li><a href="{% url 'budget:category-update' category.id %}">Update</a></li>
         <li><a href="{% url 'budget:category-delete' category.id %}">Delete</a></li>
-        <li><a href="{% url 'budget:category-list' %}">Back</a></li>
     </ul>
     <b>Transactions:</b>
     {% for t in category.transaction_set.all %}

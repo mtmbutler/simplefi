@@ -258,17 +258,6 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
 
 
 # -- CATEGORIES --
-class CategoryList(LoginRequiredMixin, SingleTableMixin, FilterView):
-    model = models.Category
-    table_class = tables.CategoryTable
-    template_name = 'budget/category-list.html'
-    filterset_class = tables.CategoryFilter
-
-    def get_table_data(self):
-        qs = super().get_table_data()
-        return qs.filter(user=self.request.user)
-
-
 class CategoryView(LoginRequiredMixin, AuthQuerySetMixin,
                    generic.DetailView):
     model = models.Category
@@ -291,7 +280,7 @@ class CategoryUpdate(LoginRequiredMixin, AuthQuerySetMixin,
 
 class CategoryDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Category
-    success_url = reverse_lazy('budget:category-list')
+    success_url = reverse_lazy('budget:index')
     template_name = 'budget/category-delete.html'
 
 
