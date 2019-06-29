@@ -62,6 +62,9 @@ def oys_qs(user, class_id=None):
         # https://docs.djangoproject.com/en/dev/topics/db/aggregation/#interaction-with-default-ordering-or-order-by
         .order_by())
 
+    if not grp_qs:
+        return grp_qs
+
     # Pivot
     piv = pd.DataFrame(grp_qs).pivot(
         index=ix,
