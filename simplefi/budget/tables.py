@@ -206,7 +206,7 @@ def linkify_category_by_name(name):
     qs = model.objects.filter(name__iexact=name)
     if qs.count() != 1:
         print(qs.count())
-        return reverse('budget:class-list')
+        return reverse('budget:index')
     return qs.first().get_absolute_url()
 
 

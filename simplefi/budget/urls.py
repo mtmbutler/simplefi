@@ -27,7 +27,6 @@ urlpatterns = [
     path('uploads/<int:pk>/delete/', views.UploadDelete.as_view(), name='upload-delete'),
     
     # Classes
-    path('classes/', views.ClassList.as_view(), name='class-list'),
     path('classes/<int:pk>/', views.ClassView.as_view(), name='class-detail'),
     path('classes/<int:pk>/update/', views.BudgetUpdate.as_view(), name='budget-update'),
     

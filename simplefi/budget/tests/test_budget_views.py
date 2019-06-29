@@ -160,11 +160,6 @@ class TestListViews:
         template = 'budget/category-list.html'
         self.list_view_test(client, django_user_model, url, template)
 
-    def test_class_list_view(self, client, django_user_model):
-        url = 'budget:class-list'
-        template = 'budget/class-list.html'
-        self.list_view_test(client, django_user_model, url, template)
-
     def test_pattern_list_view(self, client, django_user_model):
         url = 'budget:pattern-list'
         template = 'budget/pattern-list.html'

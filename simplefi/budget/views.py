@@ -215,16 +215,6 @@ class BudgetUpdate(LoginRequiredMixin, AuthQuerySetMixin,
     template_name = 'budget/budget-update.html'
 
 
-class ClassList(LoginRequiredMixin, SingleTableView):
-    model = models.Budget
-    table_class = tables.ClassTable
-    template_name = 'budget/class-list.html'
-
-    def get_table_data(self):
-        qs = super().get_table_data()
-        return qs.filter(user=self.request.user)
-
-
 class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
     model = models.TransactionClass
     template_name = 'budget/class-detail.html'
