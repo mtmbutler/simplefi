@@ -72,9 +72,9 @@ def oys_qs(user, class_id=None):
     # Rename and convert back to list of dicts
     if class_id is None:
         piv.index.name = 'class_'
+        piv.index = piv.index.str.title()
     else:
         piv.index.name = 'category'
-    piv.index = piv.index.str.title()
     piv.columns = [c.strftime('%b_%y') for c in piv.columns]
     new_qs = piv.reset_index().to_dict('records')
 

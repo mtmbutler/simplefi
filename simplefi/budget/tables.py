@@ -203,7 +203,7 @@ def linkify_class_by_name(name):
 
 def linkify_category_by_name(name):
     model = apps.get_model('budget.Category')
-    qs = model.objects.filter(name=name)
+    qs = model.objects.filter(name__iexact=name)
     if qs.count() != 1:
         print(qs.count())
         return reverse('budget:class-list')
@@ -219,6 +219,6 @@ class SummaryTable(tables.Table):
 
 class ClassSummaryTable(tables.Table):
     category = tables.Column(
-        accessor='category') #,
-        # linkify=lambda record: linkify_category_by_name(
-        #     record["category"].lower()))
+        accessor='category',
+        linkify=lambda record: linkify_category_by_name(
+            record["category"]))

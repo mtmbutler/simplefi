@@ -241,11 +241,7 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
     def categories(self):
         return {
             c.name: c.id
-            for c in self.object.category_set.all()
-        }
-
-    def transactions(self):
-        return self.object.transactions(user=self.request.user)
+            for c in self.object.category_set.all()}
 
 
 # -- CATEGORIES --

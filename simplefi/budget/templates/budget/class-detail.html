@@ -4,12 +4,8 @@
 {% load bootstrap3 %}
 
 {% block content %}
-    <h2>Class Detail</h2>
-    <p>
-        <b>Name:</b>
-        <span>{{ transactionclass }}</span>
-    </p>
-    {% if budget %}
+    <h2>Class Detail: {{ transactionclass }}</h2>
+    {% if view.budget %}
     <p>
         <b>Budget:</b>
         <span>{{ view.budget.value }} (<a href="{% url 'budget:budget-update' view.budget.id %}">update</a>)</span>
@@ -29,8 +25,4 @@
       </div>
     </div>
     {% endif %}
-    <h3>Transactions:</h3>
-    {% for t in view.transactions %}
-        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
-    {% endfor %}
 {% endblock %}
