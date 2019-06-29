@@ -197,7 +197,7 @@ def linkify_class_by_name(name):
     qs = model.objects.filter(name=name)
     if qs.count() != 1:
         print(qs.count())
-        return reverse('budget:one-year-summary')
+        return reverse('budget:index')
     return qs.first().get_absolute_url()
 
 

@@ -19,8 +19,31 @@ from budget.utils import (
     oys_qs, thirteen_months_ago, first_day_month_after)
 
 
-class Index(LoginRequiredMixin, generic.TemplateView):
+class Index(LoginRequiredMixin, SingleTableView):
     template_name = 'budget/index.html'
+    table_class = tables.SummaryTable
+
+    def get_queryset(self):
+        qs = oys_qs(user=self.request.user)
+        return qs
+
+    def get_table_kwargs(self):
+        fmt = '%b_%y'
+        orig = thirteen_months_ago()
+        first = datetime.date(year=orig.year, month=orig.month, day=1)
+        now = timezone.now()
+        last = datetime.date(year=now.year, month=now.month, day=1)
+
+        # Add each month to the header
+        cols = []
+        cur = first
+        while cur <= last:
+            cols.append(cur.strftime(fmt))
+            cur = first_day_month_after(cur)
+
+        extra_cols = [
+            (c, Column(attrs={'td': dict(align='right')})) for c in cols]
+        return dict(extra_columns=extra_cols)
 
 
 class AuthQuerySetMixin:
@@ -382,31 +405,3 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
     def get_success_url(self):
         return reverse_lazy('budget:transaction-list')
-
-
-# -- SUMMARIES --
-class OneYearSummary(LoginRequiredMixin, SingleTableView):
-    template_name = 'budget/one_year_summary.html'
-    table_class = tables.SummaryTable
-
-    def get_queryset(self):
-        qs = oys_qs(user=self.request.user)
-        return qs
-
-    def get_table_kwargs(self):
-        fmt = '%b_%y'
-        orig = thirteen_months_ago()
-        first = datetime.date(year=orig.year, month=orig.month, day=1)
-        now = timezone.now()
-        last = datetime.date(year=now.year, month=now.month, day=1)
-
-        # Add each month to the header
-        cols = []
-        cur = first
-        while cur <= last:
-            cols.append(cur.strftime(fmt))
-            cur = first_day_month_after(cur)
-
-        extra_cols = [
-            (c, Column(attrs={'td': dict(align='right')})) for c in cols]
-        return dict(extra_columns=extra_cols)

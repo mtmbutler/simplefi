@@ -75,17 +75,6 @@ class TestOtherViews:
         tp_names = [t.name for t in response.templates]
         assert response.status_code == 200 and template in tp_names
 
-    def test_one_year_summary(self, client, django_user_model):
-        url = 'budget:one-year-summary'
-        template = 'budget/one_year_summary.html'
-
-        login(client, django_user_model)
-
-        # Check the page
-        response = client.get(reverse(url))
-        tp_names = [t.name for t in response.templates]
-        assert response.status_code == 200 and template in tp_names
-
 
 class TestDetailViews:
     @staticmethod

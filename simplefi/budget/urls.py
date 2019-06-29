@@ -50,8 +50,5 @@ urlpatterns = [
     # Transactions
     path('transactions/', views.TransactionList.as_view(), name='transaction-list'),
     path('transactions/<int:pk>/', views.TransactionView.as_view(), name='transaction-detail'),
-    path('transactions/<int:pk>/delete/', views.TransactionDelete.as_view(), name='transaction-delete'),
-
-    # Summaries
-    path('summaries/one_year', views.OneYearSummary.as_view(), name='one-year-summary')
+    path('transactions/<int:pk>/delete/', views.TransactionDelete.as_view(), name='transaction-delete')
 ]
