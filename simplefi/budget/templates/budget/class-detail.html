@@ -17,6 +17,9 @@
 
     {% if view.categories %}
     <h3>One-Year Summary</h3>
+    <a href="{% url 'budget:category-add' %}">
+        {% bootstrap_button 'Add New Category' %}
+    </a>
     <div class="container-fluid">
       <div class="row">
         <div class="col-sm-8">
