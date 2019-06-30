@@ -1,14 +1,19 @@
-import pandas as pd
+import calendar
+from typing import Dict, List, TYPE_CHECKING
+
 from django.utils import timezone
 
 from debt.models import CreditLine, Statement
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
 MAX_ROWS = 120
 
 
-def debt_summary(user):
-    """Generates a DataFrame showing the path out of debt."""
+def debt_summary(user: 'User') -> List[Dict[str, str]]:
+    """Generates a table showing the path out of debt."""
     accs = CreditLine.objects.filter(user=user, credit_line__gt=0)
 
     # Get starting point
@@ -18,7 +23,7 @@ def debt_summary(user):
         if d is not None:
             earliest_dates.append(d)
     if not earliest_dates:
-        return pd.DataFrame()
+        return []
     earliest = min(earliest_dates)
     month = earliest.month
     year = earliest.year
@@ -40,7 +45,8 @@ def debt_summary(user):
             except Statement.DoesNotExist:
                 # If it's before this month, set to balance
                 if year < now.year or (month < now.month and year == now.year):
-                    row[a.name] = a.statement_set.order_by('year', 'month').first().balance
+                    row[a.name] = a.statement_set.order_by(
+                        'year', 'month').first().balance
                 else:
                     # Forecast the value instead
                     prev_bal = rows[-1][a.name] if rows else a.balance
@@ -49,7 +55,7 @@ def debt_summary(user):
 
         # Spend the debt budget
         if len(min_pay) == accs.count():
-            budget = 1700  # Todo
+            budget = 1700  # Todo: make this configurable
             budget -= sum(min_pay.values())
             for a in accs.order_by('priority'):
                 if row[a.name] >= budget:
@@ -58,14 +64,23 @@ def debt_summary(user):
                 else:
                     budget -= row[a.name]
                     row[a.name] = 0
+
+        # Add total column
         row.update(Total=sum(row.values()))
-        row.update(year=year, month=month)
+
+        # Add month columns, then append to the table
+        row.update(month=str(calendar.month_abbr[month]) + " " + str(year))
         rows.append(row)
 
         # Exit condition
-        if row['Total'] == 0:
-            break
-        elif count >= MAX_ROWS:
+        if row['Total'] == 0 or count >= MAX_ROWS:
+            # Round float values
+            for row in rows:
+                for k, v in row.items():
+                    try:
+                        row[k] = format(v, ',.0f')
+                    except ValueError:
+                        pass
             break
 
         # Increment
@@ -75,9 +90,5 @@ def debt_summary(user):
         else:
             month += 1
         count += 1
-    col_order = [a.name for a in accs.order_by('priority')] + ['Total']
-    df = pd.DataFrame(
-        rows).set_index(['year', 'month']).astype(int)
-    df = df[col_order]
 
-    return df
+    return rows

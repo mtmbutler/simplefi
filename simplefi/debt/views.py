@@ -1,4 +1,5 @@
 import calendar
+from typing import List, Dict, Tuple
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
@@ -6,8 +7,10 @@ from django.db.models import ForeignKey
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django_tables2 import Column
+from django_tables2.views import SingleTableView
 
-from debt import models
+from debt import models, tables
 from debt.utils import debt_summary
 
 
@@ -155,24 +158,31 @@ class StatementDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     template_name = 'debt/statement-delete.html'
 
 
-class DebtSummary(LoginRequiredMixin, generic.TemplateView):
+class DebtSummary(LoginRequiredMixin, SingleTableView):
     template_name = 'debt/debt_summary.html'
+    table_class = tables.SummaryTable
+    table_pagination = False
 
-    def get_context_data(self):
-        df = debt_summary(self.request.user)
+    def get_queryset(self):
+        return debt_summary(self.request.user)
 
-        # Convert (2018, 2) MultiIndex into "Feb 2018"
-        index_ = []
-        for i in df.index:
-            index_.append(str(calendar.month_abbr[i[1]]) + " " + str(i[0]))
-        context = {
-            'columns': df.columns.tolist(),
-            # Convert each row into a list of strings
-            # (formatted to 0 decimal places)
-            'data': {index_[i]: r.tolist()
-                     for i, (__, r) in enumerate(df.iterrows())},
-            # Add a dict of account name and pks
-            'accounts': {a.name: a.id
-                         for a in models.CreditLine.objects.filter(
-                            user=self.request.user)}}
-        return context
+    def get_table_kwargs(self) -> Dict[str, List[Tuple[str, Column]]]:
+        credit_lines = models.CreditLine.objects.filter(
+            user=self.request.user
+        ).order_by('priority')
+        extra_cols = []  # type: List[Tuple[str, Column]]
+        for cl in credit_lines:
+            name = cl.name
+            print(f"Defining lambda: {name}")
+
+            def linkme(record):
+                print(f"Inside lambda: {name}")
+                return tables.linkify_statement(name, record['month'])
+            extra_cols.append(
+                (cl.name, Column(
+                    attrs={'td': dict(align='right')},
+                    orderable=False,
+                    linkify=lambda record: linkme(record)))
+            )
+
+        return {'extra_columns': extra_cols}
