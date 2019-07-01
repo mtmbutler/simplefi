@@ -6,7 +6,7 @@
         <b>Name:</b>
         <span>{{ creditline.name }}</span>
     <br>        <b>Holder:</b>
-        <span><a href="{% url 'debt:accountholder-detail' creditline.holder_id %}">{{ creditline.holder }}</a></span>
+        <span>{{ creditline.holder }}</span>
     <br>        <b>Date Opened:</b>
         <span>{{ creditline.date_opened }}</span>
     <br>        <b>Annual Fee:</b>

@@ -14,23 +14,9 @@ class UserDataModel(models.Model):
         abstract = True
 
 
-class AccountHolder(UserDataModel):
-    name = models.CharField('Name', max_length=255)
-
-    class Meta:
-        unique_together = ('user', 'name')
-
-    def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return reverse('debt:accountholder-detail', kwargs={'pk': self.pk})
-
-
 class CreditLine(UserDataModel):
     name = models.CharField('Name', max_length=255)
-    holder = models.ForeignKey(AccountHolder, on_delete=models.CASCADE,
-                               null=True)
+    holder = models.CharField('Name', max_length=255)
     statement_date = models.PositiveSmallIntegerField(
         'Statement Date', default=1,
         help_text="The numbered day of each month that your statement posts."

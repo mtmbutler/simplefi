@@ -69,39 +69,6 @@ class AuthForeignKeyMixin:
         return context
 
 
-# -- ACCOUNT HOLDERS --
-class AccountHolderList(LoginRequiredMixin, AuthQuerySetMixin,
-                        generic.ListView):
-    model = models.AccountHolder
-    template_name = 'debt/accountholder-list.html'
-
-
-class AccountHolderView(LoginRequiredMixin, AuthQuerySetMixin,
-                        generic.DetailView):
-    model = models.AccountHolder
-    template_name = 'debt/accountholder-detail.html'
-
-
-class AccountHolderCreate(LoginRequiredMixin, AuthCreateFormMixin,
-                          AuthForeignKeyMixin, CreateView):
-    model = models.AccountHolder
-    fields = ['name']
-    template_name = 'debt/accountholder-add.html'
-
-
-class AccountHolderUpdate(LoginRequiredMixin, AuthQuerySetMixin,
-                          AuthForeignKeyMixin, UpdateView):
-    model = models.AccountHolder
-    fields = ['name']
-    template_name = 'debt/accountholder-update.html'
-
-
-class AccountHolderDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
-    model = models.AccountHolder
-    success_url = reverse_lazy('debt:accountholder-list')
-    template_name = 'debt/accountholder-delete.html'
-
-
 # -- ACCOUNTS --
 class AccountList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
     model = models.CreditLine

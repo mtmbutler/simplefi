@@ -106,12 +106,6 @@ class TestDetailViews:
 
         assert response.status_code == 200 and search_str in hr(response)
 
-    def test_accountholder_detail_view(self, client, django_user_model):
-        self.detail_view_test(
-            client, django_user_model, 'debt.AccountHolder',
-            'debt:accountholder-detail', search_str=TEST_NAME,
-            obj_params={'name': TEST_NAME})
-
     def test_account_detail_view(self, client, django_user_model):
         self.detail_view_test(
             client, django_user_model, 'debt.CreditLine',
@@ -130,11 +124,6 @@ class TestListViews:
     def test_account_list_view(self, client, django_user_model):
         url = 'debt:account-list'
         template = 'debt/account-list.html'
-        self.list_view_test(client, django_user_model, url, template)
-
-    def test_accountholder_list_view(self, client, django_user_model):
-        url = 'debt:accountholder-list'
-        template = 'debt/accountholder-list.html'
         self.list_view_test(client, django_user_model, url, template)
 
 
@@ -178,27 +167,12 @@ class TestCreateViews:
         template = 'debt/account-add.html'
         user = login(client, django_user_model)
 
-        # Parents
-        parent_models = ['debt.AccountHolder']
-        parents = parent_obj_set(parent_models)
-
         obj_params = dict(
             name='TestObj',
-            holder=parents['debt.AccountHolder'].id,
+            holder=TEST_NAME,
             statement_date=1, date_opened=today_str(), annual_fee=0,
             interest_rate=0, credit_line=0, min_pay_pct=0, min_pay_dlr=0,
             priority=0)
-
-        self.create_view_test(
-            client, model, url, template, user,
-            obj_params=obj_params)
-
-    def test_accountholder_create_view(self, client, django_user_model):
-        url = 'debt:accountholder-add'
-        model = 'debt.AccountHolder'
-        template = 'debt/accountholder-add.html'
-        user = login(client, django_user_model)
-        obj_params = dict(name='TestObj')
 
         self.create_view_test(
             client, model, url, template, user,
@@ -268,27 +242,12 @@ class TestUpdateViews:
         template = 'debt/account-update.html'
         user = login(client, django_user_model)
 
-        # Parents
-        parent_models = ['debt.AccountHolder']
-        parents = parent_obj_set(parent_models)
-
         obj_params = dict(
             name='TestObj',
-            holder=parents['debt.AccountHolder'].id,
+            holder=TEST_NAME,
             statement_date=1, date_opened=today_str(), annual_fee=0,
             interest_rate=0, credit_line=0, min_pay_pct=0, min_pay_dlr=0,
             priority=0)
-
-        self.update_view_test(
-            client, model, url, template, user,
-            user_required=True, obj_params=obj_params)
-
-    def test_accountholder_update_view(self, client, django_user_model):
-        url = 'debt:accountholder-update'
-        model = 'debt.AccountHolder'
-        template = 'debt/accountholder-update.html'
-        user = login(client, django_user_model)
-        obj_params = dict(name='TestObj')
 
         self.update_view_test(
             client, model, url, template, user,
@@ -349,11 +308,6 @@ class TestDeleteViews:
     def test_account_delete_view(self, client, django_user_model):
         model = 'debt.CreditLine'
         url = 'debt:account-delete'
-        self.delete_view_test(client, django_user_model, model, url)
-
-    def test_accountholder_delete_view(self, client, django_user_model):
-        model = 'debt.AccountHolder'
-        url = 'debt:accountholder-delete'
         self.delete_view_test(client, django_user_model, model, url)
 
     def test_statement_delete_view(self, client, django_user_model):
