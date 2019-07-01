@@ -2,11 +2,9 @@ import datetime
 
 import django_tables2 as tables
 from django.apps import apps
-from django.urls import reverse
 
 
 def linkify_statement(acc_name: str, mo_yr: str) -> str:
-    print(acc_name)
     model = apps.get_model('debt.Statement')
     dt = datetime.datetime.strptime(mo_yr, '%b %Y')
 

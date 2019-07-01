@@ -1,5 +1,4 @@
-import calendar
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union, TYPE_CHECKING
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
@@ -13,6 +12,11 @@ from django_tables2.views import SingleTableView
 from debt import models, tables
 from debt.utils import debt_summary
 
+if TYPE_CHECKING:
+    from django.db.models import Model
+    from django.db.models.query import QuerySet
+    from django.http import HttpRequest
+
 
 class Index(LoginRequiredMixin, generic.TemplateView):
     template_name = 'debt/index.html'
@@ -23,10 +27,10 @@ class AuthQuerySetMixin:
 
     Restricts the queryset to user-associated data only.
     """
-    model = None
-    request = None
+    model = None    # type: Union[Model, None]
+    request = None  # type: Union[HttpRequest, None]
 
-    def get_queryset(self):
+    def get_queryset(self) -> 'QuerySet':
         return self.model.objects.filter(user=self.request.user)
 
 
@@ -36,7 +40,7 @@ class AuthCreateFormMixin:
     Automatically assigns the logged-in user to the 'user' field of the
     model.
     """
-    request = None
+    request = None  # type: Union[HttpRequest, None]
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -49,10 +53,10 @@ class AuthForeignKeyMixin:
     Restricts the queryset for all foreign key fields to user-
     associated data only.
     """
-    model = None
-    request = None
+    model = None  # type: Union[Model, None]
+    request = None  # type: Union[HttpRequest, None]
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> Dict:
         context = super().get_context_data(**kwargs)
         if 'form' in context and hasattr(context['form'], 'fields'):
             fk_fields = [
@@ -130,7 +134,7 @@ class DebtSummary(LoginRequiredMixin, SingleTableView):
     table_class = tables.SummaryTable
     table_pagination = False
 
-    def get_queryset(self):
+    def get_queryset(self) -> List[Dict[str, str]]:
         return debt_summary(self.request.user)
 
     def get_table_kwargs(self) -> Dict[str, List[Tuple[str, Column]]]:

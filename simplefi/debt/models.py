@@ -1,9 +1,14 @@
 import datetime
+from decimal import Decimal
+from typing import Union, TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+
+if TYPE_CHECKING:
+    from datetime import date
 
 
 class UserDataModel(models.Model):
@@ -41,36 +46,36 @@ class CreditLine(UserDataModel):
         return self.name
 
     @property
-    def balance(self):
+    def balance(self) -> 'Decimal':
         if self.statement_set.exists():
             return self.statement_set.order_by('year', 'month').last().balance
         else:
             return self.credit_line
 
     @property
-    def available_credit(self):
+    def available_credit(self) -> 'Decimal':
         return self.credit_line - self.balance
 
     @property
-    def earliest_statement_date(self):
+    def earliest_statement_date(self) -> Union['date', None]:
         if self.statement_set.exists():
             return self.statement_set.order_by('year', 'month').first().date
         else:
             return None
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('debt:account-detail', kwargs={'pk': self.pk})
 
-    def min_pay(self, bal=None):
+    def min_pay(self, bal: Union['Decimal', None] = None) -> 'Decimal':
         if bal is None:
             bal = self.balance
         return max(self.min_pay_dlr, self.min_pay_pct / 100 * bal)
 
-    def forecast_next(self, bal=None):
+    def forecast_next(self, bal: Union['Decimal', None] = None) -> 'Decimal':
         if bal is None:
             bal = self.balance
         return max(bal * (1 + self.interest_rate / 100 / 12)
-                   - self.min_pay(bal=bal), 0)
+                   - self.min_pay(bal=bal), Decimal(0))
 
 
 class Statement(UserDataModel):
@@ -86,10 +91,10 @@ class Statement(UserDataModel):
     def __str__(self):
         return f"{self.date.strftime('%b %Y')}: {self.balance}"
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('debt:statement-update', kwargs={'pk': self.pk})
 
     @property
-    def date(self):
+    def date(self) -> 'date':
         return datetime.date(
             year=self.year, month=self.month, day=self.account.statement_date)
