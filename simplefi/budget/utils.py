@@ -1,4 +1,5 @@
 import datetime
+from typing import Dict, List, Union, TYPE_CHECKING
 
 import pandas as pd
 from django.apps import apps
@@ -6,52 +7,67 @@ from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
+if TYPE_CHECKING:
+    from datetime import date, datetime
+
+    from django.contrib.auth.models import User
 
 MAX_ROWS = 120
 
 
-def first_day_month_after(dt):
-    if dt.month == 12:
-        year = dt.year + 1
-        month = 1
-    else:
-        year = dt.year
-        month = dt.month + 1
-
-    return datetime.date(year, month, 1)
+def first_day_month_after(dt: Union['datetime', 'date']) -> 'date':
+    """The first day of the next month."""
+    if dt.month == 12:  # December edge case
+        return datetime.date(dt.year + 1, 1, 1)
+    return datetime.date(dt.year, dt.month + 1, 1)
 
 
-def thirteen_months_ago():
-    now = timezone.now()
+def thirteen_months_ago(dt: 'datetime' = None) -> 'datetime':
+    """The first day of the previous month, last year.
+
+    Example:
+        If today is 15 Mar 2000, then this function will return
+        1 Feb 1999.
+    """
+    dt = dt or timezone.now()
 
     # Logic
     first_day_this_month = datetime.datetime(
-        year=now.year, month=now.month, day=1, tzinfo=now.tzinfo
-    )
+        year=dt.year, month=dt.month, day=1, tzinfo=dt.tzinfo)
     last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
     first_day_last_month = datetime.datetime(
         year=last_day_last_month.year,
         month=last_day_last_month.month,
         day=1,
-        tzinfo=now.tzinfo
-    )
+        tzinfo=dt.tzinfo)
     return first_day_last_month - datetime.timedelta(days=365)
 
 
-def oys_qs(user, class_id=None):
+def oys_qs(
+    user: 'User', class_id: int = None
+) -> List[Dict[str, Union[str, int]]]:
+    """The query set for a pivot table.
+
+    The columns are always month/year combinations, i.e. Aug 2000,
+    Sep 2000, etc.
+
+    If class_id is none, the rows are all the classes. If defined, the
+    rows are all the categories defined for the defined class.
+
+    The values are the sum of all transactions for the given row/column.
+    """
     Transaction = apps.get_model('budget.Transaction')
 
     if class_id is None:
         base_qs = Transaction.objects.in_last_thirteen_months(user)
+        ix = 'pattern__category__class_field__name'
+        piv_ix_name = 'class_'
     else:
         base_qs = Transaction.objects.in_last_thirteen_months(
             user,
             pattern__category__class_field_id=class_id)
-
-    if class_id is None:
-        ix = 'pattern__category__class_field__name'
-    else:
         ix = 'pattern__category__name'
+        piv_ix_name = 'category'
 
     # Group by
     grp_qs = (
@@ -74,10 +90,8 @@ def oys_qs(user, class_id=None):
 
     # Rename and convert back to list of dicts
     if class_id is None:
-        piv.index.name = 'class_'
         piv.index = piv.index.str.title()
-    else:
-        piv.index.name = 'category'
+    piv.index.name = piv_ix_name
     piv.columns = [c.strftime('%b_%y') for c in piv.columns]
     new_qs = piv.reset_index().to_dict('records')
 

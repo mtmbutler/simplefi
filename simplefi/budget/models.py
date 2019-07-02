@@ -1,4 +1,5 @@
 import locale
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from django.conf import settings
@@ -8,12 +9,18 @@ from django.utils import timezone
 
 from budget.utils import thirteen_months_ago
 
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.db.models import Model
+    from django.db.models.query import QuerySet
+    from django.http import HttpRequest
+
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Todo: set by user
 
 
 class TransactionManager(models.Manager):
     @staticmethod
-    def in_last_thirteen_months(user, **kwargs):
+    def in_last_thirteen_months(user: 'User', **kwargs) -> 'QuerySet':
         return Transaction.objects.filter(
             user=user,
             date__range=[
@@ -42,7 +49,7 @@ class Bank(UserDataModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:bank-detail', kwargs={'pk': self.pk})
 
 
@@ -56,15 +63,15 @@ class Account(UserDataModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:account-detail', kwargs={'pk': self.pk})
 
     @property
-    def transaction_set(self):
+    def transaction_set(self) -> 'QuerySet':
         return Transaction.objects.filter(upload__account=self)
 
     @property
-    def num_transactions(self):
+    def num_transactions(self) -> int:
         return self.transaction_set.count()
 
 
@@ -82,14 +89,14 @@ class Upload(UserDataModel):
             .astimezone(timezone.get_current_timezone())
             .strftime('%d %b %Y - %-I:%M %p'))
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:upload-detail', kwargs={'pk': self.pk})
 
     @property
-    def num_transactions(self):
+    def num_transactions(self) -> int:
         return self.transaction_set.count()
 
-    def parse_transactions(self):
+    def parse_transactions(self) -> Union[bool, None]:
         # TODO: catch all the errors
         # Parse csv
         columns = [
@@ -151,11 +158,11 @@ class TransactionClass(models.Model):
     def __str__(self):
         return self.get_name_display()
 
-    def transactions(self, user):
+    def transactions(self, user) -> 'QuerySet':
         return Transaction.objects.filter(
             user=user, pattern__category__class_field=self)
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:class-detail', kwargs={'pk': self.pk})
 
 
@@ -170,14 +177,14 @@ class Budget(UserDataModel):
         return f"{self.class_field} - {self.value}"
 
     @property
-    def num_class_transactions(self):
+    def num_class_transactions(self) -> int:
         return self.class_field.transactions(user=self.user).count()
 
     @property
-    def fmt_value(self):
+    def fmt_value(self) -> str:
         return locale.currency(self.value, grouping=True)
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:class-detail', kwargs={'pk': self.class_field_id})
 
 
@@ -193,15 +200,15 @@ class Category(UserDataModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:category-detail', kwargs={'pk': self.pk})
 
     @property
-    def num_transactions(self):
+    def num_transactions(self) -> int:
         return self.transaction_set.count()
 
     @property
-    def transaction_set(self):
+    def transaction_set(self) -> 'QuerySet':
         return Transaction.objects.filter(pattern__category=self)
 
 
@@ -216,14 +223,14 @@ class Pattern(UserDataModel):
         return self.pattern
 
     @property
-    def class_field(self):
+    def class_field(self) -> 'TransactionClass':
         return self.category.class_field
 
     @property
-    def num_transactions(self):
+    def num_transactions(self) -> int:
         return self.transaction_set.count()
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:pattern-detail', kwargs={'pk': self.pk})
 
     def save(self, *args, **kwargs):
@@ -256,27 +263,27 @@ class Transaction(UserDataModel):
     def __str__(self):
         return f"{self.account} | {self.date} | {self.amount} | {self.description}"
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse('budget:transaction-detail', kwargs={'pk': self.pk})
 
     @property
-    def class_field(self):
+    def class_field(self) -> 'TransactionClass':
         return self.pattern.class_field
 
     @property
-    def category(self):
+    def category(self) -> 'Category':
         return self.pattern.category
 
     @property
-    def account(self):
+    def account(self) -> 'Account':
         return self.upload.account
 
     @property
-    def fmt_amt(self):
+    def fmt_amt(self) -> str:
         return locale.currency(self.amount, grouping=True)
 
     @property
-    def trunc_desc(self):
+    def trunc_desc(self) -> str:
         if len(self.description) <= self.DESC_TRUNC_LEN:
             return self.description
         else:

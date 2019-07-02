@@ -1,9 +1,16 @@
+"""A script to copy basic CRUD template files for a new model."""
+
 import glob
 import os
 import re
 
 
-def replace_keep_case(word, replacement, text):
+def replace_keep_case(word: str, replacement: str, text: str) -> str:
+    """A regex function that maintains case.
+
+    Returns `text` with all instances of `word` replaced by
+    `replacement`, maintaining the original case.
+    """
     def func(match):
         g = match.group()
         if g.islower(): return replacement.lower()
