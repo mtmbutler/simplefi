@@ -43,6 +43,12 @@ def thirteen_months_ago(dt: 'datetime' = None) -> 'datetime':
     return first_day_last_month - datetime.timedelta(days=365)
 
 
+def safe_strftime(dt: Union['datetime', str], fmt: str) -> str:
+    if isinstance(dt, str):
+        return dt
+    return dt.strftime(fmt)
+
+
 def oys_qs(
     user: 'User', class_id: int = None
 ) -> List[Dict[str, Union[str, int]]]:
@@ -57,6 +63,7 @@ def oys_qs(
     The values are the sum of all transactions for the given row/column.
     """
     Transaction = apps.get_model('budget.Transaction')
+    Budget = apps.get_model('budget.Budget')
 
     if class_id is None:
         base_qs = Transaction.objects.in_last_thirteen_months(user)
@@ -85,14 +92,19 @@ def oys_qs(
     piv = pd.DataFrame(grp_qs).pivot(
         index=ix,
         values='s', columns='month')
+
+    # Add budget col and title-ify index if in class mode
+    if class_id is None:
+        piv['budget'] = [
+            getattr(Budget.objects.get(class_field__name=c, user=user), 'value', 0)
+            for c in piv.index]
+        piv.index = piv.index.str.title()
     piv = piv.fillna(0).astype(int)
     piv.loc['Total'] = piv.sum()  # Add total row
 
     # Rename and convert back to list of dicts
-    if class_id is None:
-        piv.index = piv.index.str.title()
     piv.index.name = piv_ix_name
-    piv.columns = [c.strftime('%b_%y') for c in piv.columns]
+    piv.columns = [safe_strftime(c, '%b_%y') for c in piv.columns]
     new_qs = piv.reset_index().to_dict('records')
 
     return new_qs
