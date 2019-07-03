@@ -1,3 +1,5 @@
+from typing import Any, Callable, Union, TYPE_CHECKING
+
 import django_filters as filters
 import django_tables2 as tables
 from django.apps import apps
@@ -5,26 +7,38 @@ from django.urls import reverse
 
 from budget import models
 
+if TYPE_CHECKING:
+    from django.db.models import Model
+    from django.db.models.query import QuerySet
+    from django.http import HttpRequest
+    from django_tables2 import Column, Table
 
-def user_filter(model):
+
+def user_filter(
+    model: Union[str, 'Model']
+) -> Callable[['HttpRequest'], 'QuerySet']:
+    """Returns a function to filter a model on a request's user."""
     Model = apps.get_model(model)
 
-    def f(request):
+    def f(request: 'HttpRequest') -> 'QuerySet':
         return Model.objects.filter(user=request.user)
     return f
 
 
-def no_filter(model):
+def no_filter(
+    model: Union[str, 'Model']
+) -> Callable[[Any], 'QuerySet']:
+    """Returns a function that gets all of a model's objects."""
     Model = apps.get_model(model)
 
-    def f(__):
+    def f(__: Any) -> 'QuerySet':
         return Model.objects.all()
     return f
 
 
 class SummingColumn(tables.Column):
     @staticmethod
-    def render_footer(bound_column, table):
+    def render_footer(bound_column: 'Column', table: 'Table') -> float:
         return sum(bound_column.accessor.resolve(row) for row in table.data)
 
 
@@ -192,7 +206,7 @@ class TransactionTable(tables.Table):
 
 
 # -- SUMMARIES --
-def linkify_class_by_name(name):
+def linkify_class_by_name(name: str) -> str:
     model = apps.get_model('budget.TransactionClass')
     qs = model.objects.filter(name=name)
     if qs.count() != 1:
@@ -201,7 +215,7 @@ def linkify_class_by_name(name):
     return qs.first().get_absolute_url()
 
 
-def linkify_category_by_name(name):
+def linkify_category_by_name(name: str) -> str:
     model = apps.get_model('budget.Category')
     qs = model.objects.filter(name__iexact=name)
     if qs.count() != 1:

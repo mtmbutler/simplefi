@@ -1,5 +1,5 @@
 import locale
-from typing import TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 import pandas as pd
 from django.conf import settings
@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.db.models import Model
     from django.db.models.query import QuerySet
-    from django.http import HttpRequest
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Todo: set by user
 
@@ -106,7 +105,8 @@ class Upload(UserDataModel):
         ]
 
         try:
-            df = pd.read_csv(self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
+            df = pd.read_csv(
+                self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
         except ValueError:
             return  # TODO
         df.columns = [c.strip() for c in df.columns]

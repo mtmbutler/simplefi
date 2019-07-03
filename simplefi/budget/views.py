@@ -1,4 +1,5 @@
 import datetime
+from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
@@ -9,7 +10,7 @@ from django.utils import timezone
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView
-from django_tables2 import Column, Table
+from django_tables2 import Column
 from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
 
@@ -18,16 +19,22 @@ from budget import tables
 from budget.utils import (
     oys_qs, thirteen_months_ago, first_day_month_after)
 
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+    from django.forms import Form
+
+    from budget.models import Budget
+
 
 class Index(LoginRequiredMixin, SingleTableView):
     template_name = 'budget/index.html'
     table_class = tables.SummaryTable
 
-    def get_queryset(self):
+    def get_queryset(self) -> List[Dict[str, Union[str, int]]]:
         qs = oys_qs(user=self.request.user)
         return qs
 
-    def get_table_kwargs(self):
+    def get_table_kwargs(self) -> Dict[str, List[Tuple[str, 'Column']]]:
         fmt = '%b_%y'
         orig = thirteen_months_ago()
         first = datetime.date(year=orig.year, month=orig.month, day=1)
@@ -54,7 +61,7 @@ class AuthQuerySetMixin:
     model = None
     request = None
 
-    def get_queryset(self):
+    def get_queryset(self) -> 'QuerySet':
         return self.model.objects.filter(user=self.request.user)
 
 
@@ -66,7 +73,7 @@ class AuthCreateFormMixin:
     """
     request = None
 
-    def form_valid(self, form):
+    def form_valid(self, form: 'Form') -> bool:
         form.instance.user = self.request.user
         return super().form_valid(form)
 
@@ -80,7 +87,7 @@ class AuthForeignKeyMixin:
     model = None
     request = None
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         if 'form' in context and hasattr(context['form'], 'fields'):
             fk_fields = [
@@ -136,7 +143,7 @@ class AccountList(LoginRequiredMixin, SingleTableMixin, FilterView,
     template_name = 'budget/account-list.html'
     filterset_class = tables.AccountFilter
 
-    def get_table_data(self):
+    def get_table_data(self) -> 'QuerySet':
         qs = super().get_table_data()
         return qs.filter(user=self.request.user)
 
@@ -173,7 +180,7 @@ class UploadList(LoginRequiredMixin, SingleTableMixin, FilterView):
     template_name = 'budget/upload-list.html'
     filterset_class = tables.UploadFilter
 
-    def get_table_data(self):
+    def get_table_data(self) -> 'QuerySet':
         qs = super().get_table_data()
         return qs.filter(user=self.request.user)
 
@@ -188,11 +195,12 @@ class UploadCreate(LoginRequiredMixin, AuthForeignKeyMixin, CreateView):
     fields = ['account', 'csv']
     template_name = 'budget/upload-add.html'
 
-    def form_valid(self, form):
+    def form_valid(self, form: 'Form') -> Union['HttpResponseRedirect', str]:
         form.instance.user = self.request.user
         self.object = form.save()
 
-        if self.object.parse_transactions():  # Add transactions after saving, before redirecting
+        if self.object.parse_transactions():
+            # Add transactions after saving, before redirecting
             return HttpResponseRedirect(self.get_success_url())
         else:
             self.object.delete()
@@ -203,7 +211,7 @@ class UploadDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Upload
     template_name = 'budget/upload-delete.html'
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         return reverse_lazy('budget:upload-list')
 
 
@@ -221,7 +229,7 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
 
     table_class = tables.ClassSummaryTable
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
         fmt = '%b_%y'
@@ -247,11 +255,11 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
         context['table'] = t
         return context
 
-    def budget(self):
+    def budget(self) -> 'Budget':
         return models.Budget.objects.filter(
             user=self.request.user, class_field=self.object).first()
 
-    def categories(self):
+    def categories(self) -> Dict[str, int]:
         return {
             c.name: c.id
             for c in self.object.category_set.all()}
@@ -288,7 +296,7 @@ class CategoryDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 class PatternClassify(LoginRequiredMixin, generic.RedirectView):
     pattern_name = 'budget:pattern-list'
 
-    def get_redirect_url(self, *args, **kwargs):
+    def get_redirect_url(self, *args, **kwargs) -> str:
         # Classify
         for p in models.Pattern.objects.filter(user=self.request.user):
             p.match_transactions()
@@ -298,7 +306,7 @@ class PatternClassify(LoginRequiredMixin, generic.RedirectView):
 class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
     pattern_name = 'budget:pattern-list'
 
-    def get_redirect_url(self, *args, **kwargs):
+    def get_redirect_url(self, *args, **kwargs) -> str:
         # Delassify
         models.Transaction.objects.filter(user=self.request.user).update(
             pattern=None)
@@ -311,11 +319,11 @@ class PatternList(LoginRequiredMixin, SingleTableMixin, FilterView):
     template_name = 'budget/pattern-list.html'
     filterset_class = tables.PatternFilter
 
-    def get_table_data(self):
+    def get_table_data(self) -> 'QuerySet':
         qs = super().get_table_data()
         return qs.filter(user=self.request.user)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         li = models.Transaction.objects.filter(
             user=self.request.user, pattern=None)
@@ -335,7 +343,7 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
     fields = ['pattern', 'category']
     template_name = 'budget/pattern-add.html'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super(PatternCreate, self).get_context_data(**kwargs)
         li = models.Transaction.objects.filter(
             user=self.request.user, pattern=None).order_by('description')
@@ -343,7 +351,7 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
         context['num_unmatched_transactions'] = len(li)
         return context
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         return reverse('budget:pattern-add')
 
 
@@ -367,7 +375,7 @@ class TransactionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     template_name = 'budget/transaction-list.html'
     filterset_class = tables.TransactionFilter
 
-    def get_table_data(self):
+    def get_table_data(self) -> 'QuerySet':
         qs = super().get_table_data()
         return qs.filter(user=self.request.user)
 
@@ -382,5 +390,5 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Transaction
     template_name = 'budget/transaction-delete.html'
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         return reverse_lazy('budget:transaction-list')
