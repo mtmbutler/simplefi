@@ -21,7 +21,7 @@ class UserDataModel(models.Model):
 
 class CreditLine(UserDataModel):
     name = models.CharField('Name', max_length=255)
-    holder = models.CharField('Name', max_length=255)
+    holder = models.CharField('Holder', max_length=255)
     statement_date = models.PositiveSmallIntegerField(
         'Statement Date', default=1,
         help_text="The numbered day of each month that your statement posts."
