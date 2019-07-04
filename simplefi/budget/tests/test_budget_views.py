@@ -166,9 +166,9 @@ class TestCreateViews:
                          user_required=True, obj_params=None,
                          file_field=None):
         # Make sure there are no existing objects
-        Model = apps.get_model(*model.split('.'))
-        Model.objects.all().delete()
-        assert Model.objects.count() == 0
+        model_cls = apps.get_model(*model.split('.'))
+        model_cls.objects.all().delete()
+        assert model_cls.objects.count() == 0
 
         # Check the create page
         response = client.get(reverse(url))
@@ -186,9 +186,9 @@ class TestCreateViews:
         try:
             assert (
                 response.status_code == 302
-                and Model.objects.count() == 1)
+                and model_cls.objects.count() == 1)
             if user_required:
-                obj = Model.objects.first()
+                obj = model_cls.objects.first()
                 assert obj.user == user
         except AssertionError:
             print(hr(response))
@@ -272,9 +272,9 @@ class TestUpdateViews:
                          user_required=True, obj_params=None,
                          create_recursive=True):
         # Make sure there are no existing objects and make a new one
-        Model = apps.get_model(*model.split('.'))
-        Model.objects.all().delete()
-        assert Model.objects.count() == 0
+        model_cls = apps.get_model(*model.split('.'))
+        model_cls.objects.all().delete()
+        assert model_cls.objects.count() == 0
         create_kwargs = dict(_model=model)
         if user_required:
             create_kwargs.update(user=user)
@@ -292,7 +292,7 @@ class TestUpdateViews:
         response = client.post(reverse(url, kwargs={'pk': obj.pk}), data=obj_params)
         try:
             assert response.status_code == 302
-            obj = Model.objects.first()
+            obj = model_cls.objects.first()
             for k, v in obj_params.items():
                 actual_val = getattr(obj, k)
                 if isinstance(actual_val, datetime.date):
@@ -370,9 +370,9 @@ class TestDeleteViews:
     def delete_view_test(client, django_user_model, model, url,
                          user_required=True, obj_params=None):
         # Make sure there are no existing objects
-        Model = apps.get_model(*model.split('.'))
-        Model.objects.all().delete()
-        assert Model.objects.count() == 0
+        model_cls = apps.get_model(*model.split('.'))
+        model_cls.objects.all().delete()
+        assert model_cls.objects.count() == 0
 
         # Create the object and assert success
         if obj_params is None:
@@ -383,19 +383,19 @@ class TestDeleteViews:
         obj = mommy.make(model, **obj_params)
         obj = create_recursive_dependencies(obj)
         obj.save()
-        assert Model.objects.count() == 1
+        assert model_cls.objects.count() == 1
 
         # Check the delete page
         response = client.get(reverse(url, kwargs={'pk': obj.id}))
         assert (
             response.status_code == 200
-            and Model.objects.count() == 1)
+            and model_cls.objects.count() == 1)
 
         # Delete the object and verify
         response = client.post(reverse(url, kwargs={'pk': obj.id}))
         assert (
             response.status_code == 302
-            and Model.objects.count() == 0)
+            and model_cls.objects.count() == 0)
 
     def test_account_delete_view(self, client, django_user_model):
         model = 'budget.Account'

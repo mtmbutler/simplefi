@@ -18,10 +18,10 @@ def user_filter(
     model: Union[str, 'Model']
 ) -> Callable[['HttpRequest'], 'QuerySet']:
     """Returns a function to filter a model on a request's user."""
-    Model = apps.get_model(model)
+    model = apps.get_model(model)
 
     def f(request: 'HttpRequest') -> 'QuerySet':
-        return Model.objects.filter(user=request.user)
+        return model.objects.filter(user=request.user)
     return f
 
 
@@ -29,10 +29,10 @@ def no_filter(
     model: Union[str, 'Model']
 ) -> Callable[[Any], 'QuerySet']:
     """Returns a function that gets all of a model's objects."""
-    Model = apps.get_model(model)
+    model = apps.get_model(model)
 
     def f(__: Any) -> 'QuerySet':
-        return Model.objects.all()
+        return model.objects.all()
     return f
 
 
@@ -57,7 +57,8 @@ class AccountTable(tables.Table):
     class Meta:
         model = models.Account
         exclude = ('user', 'id')
-        fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name', 'num_transactions']
+        fields = ['name', 'date_col_name', 'amt_col_name',
+                  'desc_col_name', 'num_transactions']
 
 
 # -- UPLOADS --
@@ -205,7 +206,6 @@ def linkify_class_by_name(name: str) -> str:
     model = apps.get_model('budget.TransactionClass')
     qs = model.objects.filter(name=name)
     if qs.count() != 1:
-        print(qs.count())
         return reverse('budget:index')
     return qs.first().get_absolute_url()
 
@@ -214,7 +214,6 @@ def linkify_category_by_name(name: str) -> str:
     model = apps.get_model('budget.Category')
     qs = model.objects.filter(name__iexact=name)
     if qs.count() != 1:
-        print(qs.count())
         return reverse('budget:index')
     return qs.first().get_absolute_url()
 
