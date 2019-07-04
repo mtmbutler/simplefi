@@ -36,25 +36,11 @@ class UserDataModel(models.Model):
         abstract = True
 
 
-class Bank(UserDataModel):
+class Account(UserDataModel):
     name = models.CharField('Name', max_length=255)
     date_col_name = models.CharField('Date Header', max_length=255)
     amt_col_name = models.CharField('Amount Header', max_length=255)
     desc_col_name = models.CharField('Description Header', max_length=255)
-
-    class Meta:
-        unique_together = ('user', 'name')
-
-    def __str__(self):
-        return self.name
-
-    def get_absolute_url(self) -> str:
-        return reverse('budget:bank-detail', kwargs={'pk': self.pk})
-
-
-class Account(UserDataModel):
-    name = models.CharField('Name', max_length=255)
-    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'name')
@@ -99,9 +85,9 @@ class Upload(UserDataModel):
         # TODO: catch all the errors
         # Parse csv
         columns = [
-            self.account.bank.date_col_name,
-            self.account.bank.amt_col_name,
-            self.account.bank.desc_col_name
+            self.account.date_col_name,
+            self.account.amt_col_name,
+            self.account.desc_col_name
         ]
 
         try:

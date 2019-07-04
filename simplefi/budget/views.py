@@ -104,44 +104,11 @@ class AuthForeignKeyMixin:
         return context
 
 
-# -- BANKS --
-class BankList(LoginRequiredMixin, AuthQuerySetMixin, generic.ListView):
-    model = models.Bank
-    template_name = 'budget/bank-list.html'
-
-
-class BankView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
-    model = models.Bank
-    template_name = 'budget/bank-detail.html'
-
-
-class BankCreate(LoginRequiredMixin, AuthCreateFormMixin, AuthForeignKeyMixin,
-                 CreateView):
-    model = models.Bank
-    fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
-    template_name = 'budget/bank-add.html'
-
-
-class BankUpdate(LoginRequiredMixin, AuthQuerySetMixin, AuthForeignKeyMixin,
-                 UpdateView):
-    model = models.Bank
-    fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
-    template_name = 'budget/bank-update.html'
-
-
-class BankDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
-    model = models.Bank
-    success_url = reverse_lazy('budget:bank-list')
-    template_name = 'budget/bank-delete.html'
-
-
 # -- ACCOUNTS --
-class AccountList(LoginRequiredMixin, SingleTableMixin, FilterView,
-                  ExportMixin):
+class AccountList(LoginRequiredMixin, SingleTableView, ExportMixin):
     model = models.Account
     table_class = tables.AccountTable
     template_name = 'budget/account-list.html'
-    filterset_class = tables.AccountFilter
 
     def get_table_data(self) -> 'QuerySet':
         qs = super().get_table_data()
@@ -156,14 +123,14 @@ class AccountView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
 class AccountCreate(LoginRequiredMixin, AuthCreateFormMixin,
                     AuthForeignKeyMixin, CreateView):
     model = models.Account
-    fields = ['name', 'bank']
+    fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
     template_name = 'budget/account-add.html'
 
 
 class AccountUpdate(LoginRequiredMixin, AuthQuerySetMixin, AuthForeignKeyMixin,
                     UpdateView):
     model = models.Account
-    fields = ['name', 'bank']
+    fields = ['name', 'date_col_name', 'amt_col_name', 'desc_col_name']
     template_name = 'budget/account-update.html'
 
 

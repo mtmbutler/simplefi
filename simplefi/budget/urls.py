@@ -6,13 +6,6 @@ app_name = 'budget'
 urlpatterns = [
     path('', views.Index.as_view(), name='index'),
     
-    # Banks
-    path('banks/', views.BankList.as_view(), name='bank-list'),
-    path('banks/add/', views.BankCreate.as_view(), name='bank-add'),
-    path('banks/<int:pk>/', views.BankView.as_view(), name='bank-detail'),
-    path('banks/<int:pk>/update/', views.BankUpdate.as_view(), name='bank-update'),
-    path('banks/<int:pk>/delete/', views.BankDelete.as_view(), name='bank-delete'),
-    
     # Accounts
     path('accounts/', views.AccountList.as_view(), name='account-list'),
     path('accounts/add/', views.AccountCreate.as_view(), name='account-add'),
