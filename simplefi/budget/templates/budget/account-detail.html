@@ -5,8 +5,12 @@
     <p>
         <b>Name:</b>
         <span>{{ account.name }}</span>
-    <br>        <b>Bank:</b>
-        <span><a href="{% url 'budget:bank-detail' account.bank.id %}">{{ account.bank }}</a></span>
+    <br>        <b>Date Header:</b>
+        <span>{{ object.date_col_name }}</span>
+    <br>        <b>Amount Header:</b>
+        <span>{{ object.amt_col_name }}</span>
+    <br>        <b>Description Header:</b>
+        <span>{{ object.desc_col_name }}</span>
     </p>
     <ul>
         <li><a href="{% url 'budget:account-update' account.id %}">Update</a></li>

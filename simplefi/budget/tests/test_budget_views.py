@@ -95,12 +95,6 @@ class TestDetailViews:
 
         assert response.status_code == 200 and search_str in hr(response)
 
-    def test_bank_detail_view(self, client, django_user_model):
-        self.detail_view_test(
-            client, django_user_model, 'budget.Bank',
-            'budget:bank-detail', search_str=TEST_NAME,
-            obj_params={'name': TEST_NAME})
-
     def test_account_detail_view(self, client, django_user_model):
         self.detail_view_test(
             client, django_user_model, 'budget.Account',
@@ -148,11 +142,6 @@ class TestListViews:
     def test_account_list_view(self, client, django_user_model):
         url = 'budget:account-list'
         template = 'budget/account-list.html'
-        self.list_view_test(client, django_user_model, url, template)
-
-    def test_bank_list_view(self, client, django_user_model):
-        url = 'budget:bank-list'
-        template = 'budget/bank-list.html'
         self.list_view_test(client, django_user_model, url, template)
 
     def test_pattern_list_view(self, client, django_user_model):
@@ -211,23 +200,6 @@ class TestCreateViews:
         template = 'budget/account-add.html'
         user = login(client, django_user_model)
 
-        # Parents
-        parent_models = ['budget.Bank']
-        parents = parent_obj_set(parent_models)
-
-        obj_params = dict(
-            name='TestObj', bank=parents['budget.Bank'].id)
-
-        self.create_view_test(
-            client, model, url, template, user,
-            obj_params=obj_params)
-
-    def test_bank_create_view(self, client, django_user_model):
-        url = 'budget:bank-add'
-        model = 'budget.Bank'
-        template = 'budget/bank-add.html'
-        user = login(client, django_user_model)
-
         obj_params = dict(
             name='TestObj', date_col_name='Date', amt_col_name='Amt',
             desc_col_name='Desc')
@@ -282,9 +254,8 @@ class TestCreateViews:
 
         # Create file
         acc = parents['budget.Account']
-        bank = acc.bank
         content = ','.join(
-            [bank.date_col_name, bank.amt_col_name, bank.desc_col_name])
+            [acc.date_col_name, acc.amt_col_name, acc.desc_col_name])
         csv = temp_file(content=content)
 
         obj_params = dict(
@@ -338,23 +309,6 @@ class TestUpdateViews:
         url = 'budget:account-update'
         model = 'budget.Account'
         template = 'budget/account-update.html'
-        user = login(client, django_user_model)
-
-        # Parents
-        parent_models = ['budget.Bank']
-        parents = parent_obj_set(parent_models)
-
-        obj_params = dict(
-            name='TestObj', bank=parents['budget.Bank'].id)
-
-        self.update_view_test(
-            client, model, url, template, user,
-            user_required=True, obj_params=obj_params)
-
-    def test_bank_update_view(self, client, django_user_model):
-        url = 'budget:bank-update'
-        model = 'budget.Bank'
-        template = 'budget/bank-update.html'
         user = login(client, django_user_model)
 
         obj_params = dict(
@@ -446,11 +400,6 @@ class TestDeleteViews:
     def test_account_delete_view(self, client, django_user_model):
         model = 'budget.Account'
         url = 'budget:account-delete'
-        self.delete_view_test(client, django_user_model, model, url)
-
-    def test_bank_delete_view(self, client, django_user_model):
-        model = 'budget.Bank'
-        url = 'budget:bank-delete'
         self.delete_view_test(client, django_user_model, model, url)
 
     def test_category_delete_view(self, client, django_user_model):

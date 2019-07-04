@@ -2,9 +2,6 @@
 
 {% block content %}
     <h2>Update account</h2>
-    <p>
-        <a href="{% url 'budget:bank-list' %}">Manage Banks</a>
-    </p>
     <form method="post">{% csrf_token %}
         {{ form.as_p }}
         <input type="submit" value="Update">

@@ -34,14 +34,14 @@ if __name__ == '__main__':
     files = glob.glob(f'{dir_}/{to_be_replaced}-*')
 
     for path in files:
-        # Read bank file
+        # Read original file
         with open(path) as f:
             s = f.read()
 
         # Replace references
         s = replace_keep_case(to_be_replaced, new, s)
 
-        # Write new account file
+        # Write new file
         new_path = path.replace(to_be_replaced, new)
         with open(new_path, 'w+') as f:
             f.write(s)

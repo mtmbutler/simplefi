@@ -2,9 +2,6 @@
 
 {% block content %}
     <h2>Add account</h2>
-    <p>
-        <a href="{% url 'budget:bank-list' %}">Manage Banks</a>
-    </p>
     <form method="POST" class="post-form">{% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="save btn btn-default">Save</button>
