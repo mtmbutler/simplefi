@@ -69,7 +69,7 @@ class CreditLine(UserDataModel):
     def min_pay(self, bal: Union['Decimal', None] = None) -> 'Decimal':
         if bal is None:
             bal = self.balance
-        return max(self.min_pay_dlr, self.min_pay_pct / 100 * bal)
+        return min(max(self.min_pay_dlr, self.min_pay_pct / 100 * bal), bal)
 
     def forecast_next(self, bal: Union['Decimal', None] = None) -> 'Decimal':
         if bal is None:

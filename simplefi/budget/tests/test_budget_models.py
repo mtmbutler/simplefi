@@ -11,10 +11,10 @@ DAYS_PER_YEAR = 365
 
 class TestMethods:
     def test_upload_parse_transactions(self):
-        pass
+        assert False
 
     def test_pattern_match_transactions(self):
-        pass
+        assert False
 
 
 class TestManagers:
