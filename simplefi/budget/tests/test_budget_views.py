@@ -264,6 +264,7 @@ class TestCreateViews:
         self.create_view_test(
             client, model, url, template, user,
             obj_params=obj_params, file_field='csv')
+        os.remove(csv)
 
 
 class TestUpdateViews:
