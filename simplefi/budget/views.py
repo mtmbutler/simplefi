@@ -9,7 +9,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
-from django_filters.views import FilterView
+from django_filters.views import FilterView, FilterMixin
 from django_tables2 import Column
 from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
@@ -115,9 +115,17 @@ class AccountList(LoginRequiredMixin, SingleTableView, ExportMixin):
         return qs.filter(user=self.request.user)
 
 
-class AccountView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
+class AccountView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+                  generic.DetailView):
     model = models.Account
     template_name = 'budget/account-detail.html'
+    table_class = tables.TransactionTable
+    filterset_class = tables.TransactionFilter
+
+    def get_table_data(self) -> 'QuerySet':
+        return models.Transaction.objects.filter(
+            user=self.request.user,
+            upload__account=self.object)
 
 
 class AccountCreate(LoginRequiredMixin, AuthCreateFormMixin,
@@ -152,9 +160,17 @@ class UploadList(LoginRequiredMixin, SingleTableMixin, FilterView):
         return qs.filter(user=self.request.user)
 
 
-class UploadView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
+class UploadView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+                 generic.DetailView):
     model = models.Upload
     template_name = 'budget/upload-detail.html'
+    table_class = tables.TransactionTable
+    filterset_class = tables.TransactionFilter
+
+    def get_table_data(self) -> 'QuerySet':
+        return models.Transaction.objects.filter(
+            user=self.request.user,
+            upload=self.object)
 
 
 class UploadCreate(LoginRequiredMixin, AuthForeignKeyMixin, CreateView):
@@ -233,10 +249,17 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
 
 
 # -- CATEGORIES --
-class CategoryView(LoginRequiredMixin, AuthQuerySetMixin,
+class CategoryView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
                    generic.DetailView):
     model = models.Category
     template_name = 'budget/category-detail.html'
+    table_class = tables.TransactionTable
+    filterset_class = tables.TransactionFilter
+
+    def get_table_data(self) -> 'QuerySet':
+        return models.Transaction.objects.filter(
+            user=self.request.user,
+            pattern__category=self.object)
 
 
 class CategoryCreate(LoginRequiredMixin, AuthCreateFormMixin,
@@ -299,9 +322,17 @@ class PatternList(LoginRequiredMixin, SingleTableMixin, FilterView):
         return context
 
 
-class PatternView(LoginRequiredMixin, AuthQuerySetMixin, generic.DetailView):
+class PatternView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+                  generic.DetailView):
     model = models.Pattern
     template_name = 'budget/pattern-detail.html'
+    table_class = tables.TransactionTable
+    filterset_class = tables.TransactionFilter
+
+    def get_table_data(self) -> 'QuerySet':
+        return models.Transaction.objects.filter(
+            user=self.request.user,
+            pattern=self.object)
 
 
 class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
@@ -338,8 +369,8 @@ class PatternDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 # -- TRANSACTIONS --
 class TransactionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = models.Transaction
-    table_class = tables.TransactionTable
     template_name = 'budget/transaction-list.html'
+    table_class = tables.TransactionTable
     filterset_class = tables.TransactionFilter
 
     def get_table_data(self) -> 'QuerySet':

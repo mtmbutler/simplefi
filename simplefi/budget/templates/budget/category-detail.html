@@ -1,4 +1,6 @@
 {% extends "budget_base.html" %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
 
 {% block content %}
     <h2>Category Detail</h2>
@@ -15,7 +17,20 @@
         <li><a href="{% url 'budget:category-delete' category.id %}">Delete</a></li>
     </ul>
     <b>Transactions:</b>
-    {% for t in category.transaction_set.all %}
-        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
-    {% endfor %}
+    <div class="row">
+      <div class="col-sm-8">
+        {% render_table table 'django_tables2/bootstrap.html' %}
+      </div>
+      <div class="col-sm-4">
+        {% if filter %}
+          <form action="" method="get" class="form form-group">
+            {% bootstrap_form filter.form layout='horizontal' size='small' %}
+            {% bootstrap_button 'Filter' %}
+          </form>
+          <a href="{% url 'budget:transaction-list' %}">
+            {% bootstrap_button 'Clear' %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
 {% endblock %}
