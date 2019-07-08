@@ -10,11 +10,11 @@
     </p>
     <p>
         <b>Class:</b>
-        <span>{{ pattern.class_field }}</span>
+        <span><a href="{% url 'budget:class-detail' pattern.class_field.id %}">{{ pattern.class_field }}</a></span>
     </p>
     <p>
         <b>Category:</b>
-        <span>{{ pattern.category }}</span>
+        <span><a href="{% url 'budget:category-detail' pattern.category.id %}">{{ pattern.category }}</a></span>
     </p>
     <ul>
         <li><a href="{% url 'budget:pattern-update' pattern.id %}">Update</a></li>
