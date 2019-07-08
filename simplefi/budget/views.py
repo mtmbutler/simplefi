@@ -1,4 +1,5 @@
 import datetime
+from abc import abstractmethod
 from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -104,6 +105,36 @@ class AuthForeignKeyMixin:
         return context
 
 
+class TransactionTableMixin(SingleTableMixin, FilterMixin):
+    """A mixin for including a table of transactions in a view."""
+    table_class = tables.TransactionTable
+    filterset_class = tables.TransactionFilter
+    table_pagination = dict(per_page=15)
+
+    @abstractmethod
+    def exclude_cols(self, *_, **__) -> Tuple[str, ...]:
+        """Columns to exclude from the table."""
+        return tuple()
+
+    @abstractmethod
+    def get_filter_kwargs(self, *_, **__) -> Dict[str, Any]:
+        """Arguments to pass to the QuerySet filter on Transactions."""
+        return dict()
+
+    def get_table_data(self, *args, **kwargs) -> 'QuerySet':
+        kwargs = self.get_filter_kwargs(*args, **kwargs)
+        if kwargs:
+            return models.Transaction.objects.filter(**kwargs)
+        return models.Transaction.objects.all()
+
+    def get_table_kwargs(self, *args, **kwargs) -> Dict[str, Any]:
+        d = super().get_table_kwargs()
+        exclude_cols = self.exclude_cols(*args, **kwargs)
+        if exclude_cols:
+            d['exclude'] = exclude_cols
+        return d
+
+
 # -- ACCOUNTS --
 class AccountList(LoginRequiredMixin, SingleTableView, ExportMixin):
     model = models.Account
@@ -115,15 +146,16 @@ class AccountList(LoginRequiredMixin, SingleTableView, ExportMixin):
         return qs.filter(user=self.request.user)
 
 
-class AccountView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+class AccountView(LoginRequiredMixin, TransactionTableMixin,
                   generic.DetailView):
     model = models.Account
     template_name = 'budget/account-detail.html'
-    table_class = tables.TransactionTable
-    filterset_class = tables.TransactionFilter
 
-    def get_table_data(self) -> 'QuerySet':
-        return models.Transaction.objects.filter(
+    def exclude_cols(self) -> Tuple[str, ...]:
+        return tuple(['account'])
+
+    def get_filter_kwargs(self) -> Dict[str, Any]:
+        return dict(
             user=self.request.user,
             upload__account=self.object)
 
@@ -160,15 +192,16 @@ class UploadList(LoginRequiredMixin, SingleTableMixin, FilterView):
         return qs.filter(user=self.request.user)
 
 
-class UploadView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+class UploadView(LoginRequiredMixin, TransactionTableMixin,
                  generic.DetailView):
     model = models.Upload
     template_name = 'budget/upload-detail.html'
-    table_class = tables.TransactionTable
-    filterset_class = tables.TransactionFilter
 
-    def get_table_data(self) -> 'QuerySet':
-        return models.Transaction.objects.filter(
+    def exclude_cols(self) -> Tuple[str, ...]:
+        return 'account', 'upload'
+
+    def get_filter_kwargs(self) -> Dict[str, Any]:
+        return dict(
             user=self.request.user,
             upload=self.object)
 
@@ -249,15 +282,16 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
 
 
 # -- CATEGORIES --
-class CategoryView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+class CategoryView(LoginRequiredMixin, TransactionTableMixin,
                    generic.DetailView):
     model = models.Category
     template_name = 'budget/category-detail.html'
-    table_class = tables.TransactionTable
-    filterset_class = tables.TransactionFilter
 
-    def get_table_data(self) -> 'QuerySet':
-        return models.Transaction.objects.filter(
+    def exclude_cols(self) -> Tuple[str, ...]:
+        return 'class_', 'category'
+
+    def get_filter_kwargs(self) -> Dict[str, Any]:
+        return dict(
             user=self.request.user,
             pattern__category=self.object)
 
@@ -322,15 +356,16 @@ class PatternList(LoginRequiredMixin, SingleTableMixin, FilterView):
         return context
 
 
-class PatternView(LoginRequiredMixin, SingleTableMixin, FilterMixin,
+class PatternView(LoginRequiredMixin, TransactionTableMixin,
                   generic.DetailView):
     model = models.Pattern
     template_name = 'budget/pattern-detail.html'
-    table_class = tables.TransactionTable
-    filterset_class = tables.TransactionFilter
 
-    def get_table_data(self) -> 'QuerySet':
-        return models.Transaction.objects.filter(
+    def exclude_cols(self) -> Tuple[str, ...]:
+        return 'class_', 'category', 'pattern'
+
+    def get_filter_kwargs(self) -> Dict[str, Any]:
+        return dict(
             user=self.request.user,
             pattern=self.object)
 
