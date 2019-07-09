@@ -1,47 +1,47 @@
 {% extends "budget_base.html" %}
+{% load bootstrap3 %}
 
 {% block content %}
     <h2>Transaction Detail</h2>
     <p>
         <b>Upload batch:</b>
-        <span><a href="{% url 'budget:upload-detail' transaction.upload.id %}">{{ transaction.upload }}</a></span>
+        <a href="{% url 'budget:upload-detail' transaction.upload.id %}">{{ transaction.upload }}</a>
     </p>
     <p>
         <b>Account:</b>
-        <span><a href="{% url 'budget:account-detail' transaction.account.id %}">{{ transaction.account }}</a></span>
+        <a href="{% url 'budget:account-detail' transaction.account.id %}">{{ transaction.account }}</a>
     </p>
     <p>
         <b>Date:</b>
-        <span>{{ transaction.date }}</span>
+        {{ transaction.date }}
     </p>
     <p>
         <b>Amount:</b>
-        <span>{{ transaction.amount }}</span>
+        {{ transaction.amount }}
     </p>
     <p>
         <b>Description:</b>
-        <span>{{ transaction.description }}</span>
+        {{ transaction.description }}
     </p>
     {% if transaction.class_field %}
     <p>
         <b>Class:</b>
-        <span><a href="{% url 'budget:class-detail' transaction.class_field.id %}">{{ transaction.class_field }}</a></span>
+        <a href="{% url 'budget:class-detail' transaction.class_field.id %}">{{ transaction.class_field }}</a>
     </p>
     {% endif %}
     {% if transaction.category %}
     <p>
         <b>Category:</b>
-        <span><a href="{% url 'budget:category-detail' transaction.category.id %}">{{ transaction.category }}</a></span>
+        <a href="{% url 'budget:category-detail' transaction.category.id %}">{{ transaction.category }}</a>
     </p>
     {% endif %}
     {% if transaction.pattern %}
     <p>
         <b>Classified by pattern:</b>
-        <span><a href="{% url 'budget:pattern-detail' transaction.pattern.id %}">{{ transaction.pattern }}</a></span>
+        <a href="{% url 'budget:pattern-detail' transaction.pattern.id %}">{{ transaction.pattern }}</a>
     </p>
     {% endif %}
-    <ul>
-        <li><a href="{% url 'budget:transaction-delete' transaction.id %}">Delete</a></li>
-        <li><a href="{% url 'budget:transaction-list' %}">Back</a></li>
-    </ul>
+    <a href="{% url 'budget:transaction-delete' transaction.id %}">
+      {% bootstrap_button 'Delete' %}
+    </a>
 {% endblock %}

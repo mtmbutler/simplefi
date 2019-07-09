@@ -1,37 +1,23 @@
 {% extends "debt_base.html" %}
+{% load bootstrap3 %}
 
 {% block content %}
-    <h2>Credit Line Detail</h2>
-    <p>
-        <b>Name:</b>
-        <span>{{ creditline.name }}</span>
-    <br>        <b>Holder:</b>
-        <span>{{ creditline.holder }}</span>
-    <br>        <b>Date Opened:</b>
-        <span>{{ creditline.date_opened }}</span>
-    <br>        <b>Annual Fee:</b>
-        <span>{{ creditline.annual_fee }}</span>
-    <br>        <b>Interest Rate (%):</b>
-        <span>{{ creditline.interest_rate }}</span>
-    <br>        <b>Credit Line:</b>
-        <span>{{ creditline.credit_line }}</span>
-    <br>        <b>Minimum Payment (%):</b>
-        <span>{{ creditline.min_pay_pct }}</span>
-    <br>        <b>Minimum Payment ($):</b>
-        <span>{{ creditline.min_pay_dlr }}</span>
-    <br>        <b>Priority:</b>
-        <span>{{ creditline.priority }}</span>
-    <br>        <b>Available Credit:</b>
-        <span>{{ creditline.available_credit }}</span>
-    </p>
-    <ul>
-        <li><a href="{% url 'debt:account-update' creditline.id %}">Update</a></li>
-        <li><a href="{% url 'debt:account-delete' creditline.id %}">Delete</a></li>
-        <li><a href="{% url 'debt:account-list' %}">Back</a></li>
-    </ul>
-    <h2>Statements:</h2>
+    <h2>Credit Line: {{ creditline.name }}</h2>
+    <h4>Details</h4>
+    <b>Holder:</b> {{ creditline.holder }}<br>
+    <b>Date Opened:</b> {{ creditline.date_opened }}<br>
+    <b>Annual Fee:</b> {{ creditline.annual_fee }}<br>
+    <b>Interest Rate (%):</b> {{ creditline.interest_rate }}<br>
+    <b>Credit Line:</b> {{ creditline.credit_line }}<br>
+    <b>Minimum Payment (%):</b> {{ creditline.min_pay_pct }}<br>
+    <b>Minimum Payment ($):</b> {{ creditline.min_pay_dlr }}<br>
+    <b>Priority:</b> {{ creditline.priority }}<br>
+    <b>Available Credit:</b> {{ creditline.available_credit }}<br>
+    <a href="{% url 'debt:account-update' creditline.id %}">{% bootstrap_button 'Update' %}</a>
+    <a href="{% url 'debt:account-delete' creditline.id %}">{% bootstrap_button 'Delete' %}</a>
+    <h4>Statements:</h4>
     {% for s in creditline.statement_set.all %}
-        <li><a href="{% url 'debt:statement-update' s.id %}">{{ s }}</a></li>
+        <a href="{% url 'debt:statement-update' s.id %}">{{ s }}</a><br>
     {% endfor %}
-    <li><a href="{% url 'debt:statement-add' %}">Add Statement</a></li>
+    <a href="{% url 'debt:statement-add' %}">{% bootstrap_button 'Add Statement' %}</a>
 {% endblock %}

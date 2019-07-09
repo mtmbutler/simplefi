@@ -3,39 +3,39 @@
 {% load bootstrap3 %}
 
 {% block content %}
-    <h2>Pattern Detail</h2>
-    <p>
-        <b>Pattern:</b>
-        <span>{{ pattern.pattern }}</span>
-    </p>
-    <p>
-        <b>Class:</b>
-        <span><a href="{% url 'budget:class-detail' pattern.class_field.id %}">{{ pattern.class_field }}</a></span>
-    </p>
-    <p>
-        <b>Category:</b>
-        <span><a href="{% url 'budget:category-detail' pattern.category.id %}">{{ pattern.category }}</a></span>
-    </p>
-    <ul>
-        <li><a href="{% url 'budget:pattern-update' pattern.id %}">Update</a></li>
-        <li><a href="{% url 'budget:pattern-delete' pattern.id %}">Delete</a></li>
-        <li><a href="{% url 'budget:pattern-list' %}">Back</a></li>
-    </ul>
-    <b>Transactions:</b>
+    <h2>Pattern Detail: {{ pattern.pattern }}</h2>
+  <div class="container-fluid">
     <div class="row">
-      <div class="col-sm-8">
-        {% render_table table 'django_tables2/bootstrap.html' %}
-      </div>
-      <div class="col-sm-4">
-        {% if filter %}
-          <form action="" method="get" class="form form-group">
-            {% bootstrap_form filter.form layout='horizontal' size='small' %}
-            {% bootstrap_button 'Filter' %}
-          </form>
-          <a href="{% url 'budget:transaction-list' %}">
-            {% bootstrap_button 'Clear' %}
-          </a>
-        {% endif %}
-      </div>
+        <h4>Details</h4>
+        <b>Class:</b>
+            <a href="{% url 'budget:class-detail' pattern.class_field.id %}">
+                {{ pattern.class_field }}
+            </a>
+            <br>
+        <b>Category:</b>
+            <a href="{% url 'budget:category-detail' pattern.category.id %}">
+                {{ pattern.category }}
+            </a>
+            <br>
+        <a href="{% url 'budget:pattern-update' pattern.id %}">{% bootstrap_button 'Update' %}</a>
+        <a href="{% url 'budget:pattern-delete' pattern.id %}">{% bootstrap_button 'Delete' %}</a>
     </div>
+    <div class="row">
+        <h4>Transactions</h4>
+          <div class="col-sm-8">
+            {% render_table table 'django_tables2/bootstrap.html' %}
+          </div>
+          <div class="col-sm-4">
+            {% if filter %}
+              <form action="" method="get" class="form form-group">
+                {% bootstrap_form filter.form layout='horizontal' size='small' %}
+                {% bootstrap_button 'Filter' %}
+              </form>
+              <a href="{{ request.path }}">
+                {% bootstrap_button 'Clear' %}
+              </a>
+            {% endif %}
+          </div>
+    </div>
+  </div>
 {% endblock %}
