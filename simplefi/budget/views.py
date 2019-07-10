@@ -15,8 +15,7 @@ from django_tables2 import Column
 from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
 
-from budget import models
-from budget import tables
+from budget import forms, models, tables
 from budget.utils import (
     oys_qs, thirteen_months_ago, first_day_month_after)
 
@@ -373,7 +372,6 @@ class PatternView(LoginRequiredMixin, TransactionTableMixin,
 class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
                     AuthForeignKeyMixin, CreateView):
     model = models.Pattern
-    fields = ['pattern', 'category']
     template_name = 'budget/pattern-add.html'
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
@@ -384,6 +382,9 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
         context['num_unmatched_transactions'] = len(li)
         return context
 
+    def get_form_class(self):
+        return forms.PatternForm
+
     def get_success_url(self) -> str:
         return reverse('budget:pattern-add')
 
@@ -391,8 +392,10 @@ class PatternCreate(LoginRequiredMixin, AuthCreateFormMixin,
 class PatternUpdate(LoginRequiredMixin, AuthQuerySetMixin,
                     AuthForeignKeyMixin, UpdateView):
     model = models.Pattern
-    fields = ['pattern', 'category']
     template_name = 'budget/pattern-update.html'
+
+    def get_form_class(self):
+        return forms.PatternForm
 
 
 class PatternDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
