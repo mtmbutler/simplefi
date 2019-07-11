@@ -1,4 +1,3 @@
-import locale
 from typing import Union, TYPE_CHECKING
 
 import pandas as pd
@@ -13,8 +12,6 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.db.models import Model
     from django.db.models.query import QuerySet
-
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # Todo: set by user
 
 
 class TransactionManager(models.Manager):
@@ -168,7 +165,7 @@ class Budget(UserDataModel):
 
     @property
     def fmt_value(self) -> str:
-        return locale.currency(self.value, grouping=True)
+        return f'{self.value:,.2f}'
 
     def get_absolute_url(self) -> str:
         return reverse('budget:class-detail', kwargs={'pk': self.class_field_id})
@@ -266,7 +263,7 @@ class Transaction(UserDataModel):
 
     @property
     def fmt_amt(self) -> str:
-        return locale.currency(self.amount, grouping=True)
+        return f'{self.amount:,.2f}'
 
     @property
     def trunc_desc(self) -> str:
