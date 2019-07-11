@@ -213,10 +213,12 @@ class UploadCreate(LoginRequiredMixin, AuthForeignKeyMixin, CreateView):
         form.instance.user = self.request.user
         self.object = form.save()
 
-        if self.object.parse_transactions():
+        msg = self.object.parse_transactions()
+        if msg == self.model.SUCCESS_CODE:
             # Add transactions after saving, before redirecting
             return HttpResponseRedirect(self.get_success_url())
         else:
+            # Todo: redirect to a page showing the error mesage
             self.object.delete()
             return reverse('budget:upload-list')
 

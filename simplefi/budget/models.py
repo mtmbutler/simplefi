@@ -58,6 +58,8 @@ class Account(UserDataModel):
 
 
 class Upload(UserDataModel):
+    SUCCESS_CODE = 'success'
+
     upload_time = models.DateTimeField('Uploaded', auto_now_add=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     csv = models.FileField(upload_to='csvs')
@@ -78,8 +80,7 @@ class Upload(UserDataModel):
     def num_transactions(self) -> int:
         return self.transaction_set.count()
 
-    def parse_transactions(self) -> Union[bool, None]:
-        # TODO: catch all the errors
+    def parse_transactions(self) -> str:
         # Parse csv
         columns = [
             self.account.date_col_name,
@@ -90,10 +91,15 @@ class Upload(UserDataModel):
         try:
             df = pd.read_csv(
                 self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
-        except ValueError:
-            return  # TODO
+        # Todo: probably more issues to catch here
+        except ValueError as e:
+            return str(e)
         df.columns = [c.strip() for c in df.columns]
-        df = df[columns]
+        try:
+            df = df[columns]
+        except KeyError:
+            return (f"Not all specified columns {columns} found in CSV"
+                    f" header {df.columns}")
 
         # Create transaction objects
         for i, r in df.iterrows():
@@ -102,8 +108,7 @@ class Upload(UserDataModel):
                 upload=self,
                 date=r[columns[0]],
                 amount=r[columns[1]],
-                description=r[columns[2]]
-            )
+                description=r[columns[2]])
             try:
                 t.save()
             except IntegrityError:
@@ -121,7 +126,7 @@ class Upload(UserDataModel):
                 break
             p.match_transactions()
 
-        return True
+        return self.SUCCESS_CODE
 
 
 class TransactionClass(models.Model):

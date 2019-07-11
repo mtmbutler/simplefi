@@ -17,7 +17,19 @@ DAYS_PER_YEAR = 365
 
 class TestMethods:
     @pytest.mark.xfail
-    def test_upload_parse_transactions(self):
+    def test_upload_parse_transactions_clean(self):
+        assert False
+
+    @pytest.mark.xfail
+    def test_upload_parse_transactions_wrong_header(self):
+        assert False
+
+    @pytest.mark.xfail
+    def test_upload_parse_transactions_bad_date_format(self):
+        assert False
+
+    @pytest.mark.xfail
+    def test_upload_parse_transactions_str_in_value_col(self):
         assert False
 
     def test_pattern_match_transactions(
