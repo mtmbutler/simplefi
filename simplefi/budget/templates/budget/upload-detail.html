@@ -4,14 +4,12 @@
 {% load bootstrap3 %}
 
 {% block content %}
-  <h2>Upload: {{ upload.upload_time }}</h2>
+  <h2>
+      Upload: {{ upload.upload_time }}
+        (<a href="{% url 'budget:account-detail' upload.account.id %}">{{ upload.account }}</a>)
+  </h2>
   <div class="container-fluid">
     <div class="row">
-        <h4>Details</h4>
-        <b>Account:</b>
-            <a href="{% url 'budget:account-detail' upload.account.id %}">
-                {{ upload.account }}
-            </a><br>
         <a href="{{ upload.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
         <a href="{% url 'budget:upload-delete' upload.id %}">{% bootstrap_button 'Delete' %}</a>
     </div>
@@ -19,17 +17,6 @@
         <h4>Transactions</h4>
           <div class="col-sm-8">
             {% render_table table 'django_tables2/bootstrap.html' %}
-          </div>
-          <div class="col-sm-4">
-            {% if filter %}
-              <form action="" method="get" class="form form-group">
-                {% bootstrap_form filter.form layout='horizontal' size='small' %}
-                {% bootstrap_button 'Filter' %}
-              </form>
-              <a href="{{ request.path }}">
-                {% bootstrap_button 'Clear' %}
-              </a>
-            {% endif %}
           </div>
     </div>
   </div>

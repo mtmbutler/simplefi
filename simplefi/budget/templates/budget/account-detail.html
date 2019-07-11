@@ -18,17 +18,6 @@
           <div class="col-sm-8">
             {% render_table table 'django_tables2/bootstrap.html' %}
           </div>
-          <div class="col-sm-4">
-            {% if filter %}
-              <form action="" method="get" class="form form-group">
-                {% bootstrap_form filter.form layout='horizontal' size='small' %}
-                {% bootstrap_button 'Filter' %}
-              </form>
-              <a href="{{ request.path }}">
-                {% bootstrap_button 'Clear' %}
-              </a>
-            {% endif %}
-          </div>
     </div>
   </div>
 {% endblock %}

@@ -107,7 +107,6 @@ class AuthForeignKeyMixin:
 class TransactionTableMixin(SingleTableMixin, FilterMixin):
     """A mixin for including a table of transactions in a view."""
     table_class = tables.TransactionTable
-    filterset_class = tables.TransactionFilter
     table_pagination = dict(per_page=15)
 
     @abstractmethod
