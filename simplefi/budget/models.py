@@ -1,8 +1,9 @@
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from django.conf import settings
 from django.db import models, IntegrityError
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -99,9 +100,10 @@ class Upload(UserDataModel):
             df = df[columns]
         except KeyError:
             return (f"Not all specified columns {columns} found in CSV"
-                    f" header {df.columns}")
+                    f" header {df.columns.tolist()}")
 
         # Create transaction objects
+        err = None
         for i, r in df.iterrows():
             t = Transaction(
                 user=self.user,
@@ -111,8 +113,14 @@ class Upload(UserDataModel):
                 description=r[columns[2]])
             try:
                 t.save()
-            except IntegrityError:
+            except (IntegrityError, ValidationError) as e:
+                if isinstance(e, ValidationError):
+                    err = f"Validation error: {e}"
+                    break
                 continue
+
+        if err:
+            return err
 
         # Classify
         patterns = (

@@ -1,8 +1,11 @@
 import datetime
+import os
 from typing import TYPE_CHECKING
 
-import pytest
+import pandas as pd
 from django.apps import apps
+from django.conf import settings
+from django.db import transaction
 from model_mommy import mommy
 
 from budget.tests.utils import login
@@ -16,21 +19,128 @@ DAYS_PER_YEAR = 365
 
 
 class TestMethods:
-    @pytest.mark.xfail
-    def test_upload_parse_transactions_clean(self):
-        assert False
+    def test_upload_parse_transactions_clean(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        Account = apps.get_model('budget.Account')
+        Upload = apps.get_model('budget.Upload')
+        acc = mommy.make(
+            Account, user=user, date_col_name='date', amt_col_name='amt',
+            desc_col_name='desc')
 
-    @pytest.mark.xfail
-    def test_upload_parse_transactions_wrong_header(self):
-        assert False
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            date=['2018-11-10', '2018-11-11'],
+            amt=[5.54, 3.99],
+            desc=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
 
-    @pytest.mark.xfail
-    def test_upload_parse_transactions_bad_date_format(self):
-        assert False
+        # Create the upload and try to parse the CSV
+        ul = mommy.make(Upload, account=acc, user=user, csv=temp_path)
+        result = ul.parse_transactions()
+        assert result == 'success'
+        assert ul.num_transactions == 2
+        assert acc.num_transactions == 2
 
-    @pytest.mark.xfail
-    def test_upload_parse_transactions_str_in_value_col(self):
-        assert False
+        # Cleanup
+        os.remove(temp_path)
+
+    def test_upload_parse_transactions_wrong_header(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        Account = apps.get_model('budget.Account')
+        Upload = apps.get_model('budget.Upload')
+        acc = mommy.make(
+            Account, user=user, date_col_name='date', amt_col_name='amt',
+            desc_col_name='desc')
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            date=['2018-11-10', '2018-11-11'],
+            bad_amt_col_name=[5.54, 3.99],
+            desc=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        # Create the upload and try to parse the CSV
+        ul = mommy.make(Upload, account=acc, user=user, csv=temp_path)
+        result = ul.parse_transactions()
+        assert 'Not all specified columns' in result
+        assert acc.num_transactions == 0
+
+        # Cleanup
+        os.remove(temp_path)
+
+    def test_upload_parse_transactions_bad_date_format(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        Account = apps.get_model('budget.Account')
+        Upload = apps.get_model('budget.Upload')
+        acc = mommy.make(
+            Account, user=user, date_col_name='date', amt_col_name='amt',
+            desc_col_name='desc')
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            date=['2018-11-100', '2018-11-11'],
+            amt=[5.54, 3.99],
+            desc=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        # Create the upload and try to parse the CSV
+        ul = mommy.make(Upload, account=acc, user=user, csv=temp_path)
+        with transaction.atomic():
+            result = ul.parse_transactions()
+        assert 'invalid date format' in result
+        assert acc.num_transactions == 0
+
+        # Cleanup
+        os.remove(temp_path)
+
+    def test_upload_parse_transactions_str_in_value_col(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        Account = apps.get_model('budget.Account')
+        Upload = apps.get_model('budget.Upload')
+        acc = mommy.make(
+            Account, user=user, date_col_name='date', amt_col_name='amt',
+            desc_col_name='desc')
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            date=['2018-11-10', '2018-11-11'],
+            amt=['five dollars', 3.99],
+            desc=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        # Create the upload and try to parse the CSV
+        ul = mommy.make(Upload, account=acc, user=user, csv=temp_path)
+        with transaction.atomic():
+            result = ul.parse_transactions()
+        assert 'Validation error' in result
+        assert acc.num_transactions == 0
+
+        # Cleanup
+        os.remove(temp_path)
 
     def test_pattern_match_transactions(
         self,
