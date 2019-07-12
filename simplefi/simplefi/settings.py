@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 
 import yaml
+from django.contrib.messages import constants as msg_const
 from django.urls import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -143,3 +144,9 @@ MEDIA_URL = '/media/'
 # Debugging settings
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Map message tags to bootstrap alerts
+MESSAGE_TAGS = {
+    msg_const.ERROR: 'danger',
+    msg_const.DEBUG: 'info'
+}

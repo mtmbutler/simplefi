@@ -2,6 +2,7 @@ import datetime
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
@@ -209,18 +210,21 @@ class UploadCreate(LoginRequiredMixin, AuthForeignKeyMixin, CreateView):
     fields = ['account', 'csv']
     template_name = 'budget/upload-add.html'
 
-    def form_valid(self, form: 'Form') -> Union['HttpResponseRedirect', str]:
+    def form_valid(self, form: 'Form') -> 'HttpResponseRedirect':
         form.instance.user = self.request.user
         self.object = form.save()
 
         msg = self.object.parse_transactions()
         if msg == self.model.SUCCESS_CODE:
             # Add transactions after saving, before redirecting
-            return HttpResponseRedirect(self.get_success_url())
+            url = self.get_success_url()
         else:
             # Todo: redirect to a page showing the error mesage
             self.object.delete()
-            return reverse('budget:upload-list')
+            messages.error(self.request, f"Upload failed: {msg}")
+            url = reverse('budget:upload-list')
+
+        return HttpResponseRedirect(url)
 
 
 class UploadDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
