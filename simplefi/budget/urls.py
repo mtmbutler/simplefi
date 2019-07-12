@@ -41,5 +41,6 @@ urlpatterns = [
     # Transactions
     path('transactions/', views.TransactionList.as_view(), name='transaction-list'),
     path('transactions/<int:pk>/', views.TransactionView.as_view(), name='transaction-detail'),
-    path('transactions/<int:pk>/delete/', views.TransactionDelete.as_view(), name='transaction-delete')
+    path('transactions/<int:pk>/delete/', views.TransactionDelete.as_view(), name='transaction-delete'),
+    path('transactions/download/', views.TransactionDownloadView.as_view(), name='transaction-download')
 ]

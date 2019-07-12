@@ -5,6 +5,10 @@
 {% block content %}
   <h2>Transactions</h2>
   <div class="container-fluid">
+
+  <a href="{% url 'budget:transaction-download' %}">
+    {% bootstrap_button 'Download All' %}
+  </a>
     <div class="row">
       <div class="col-sm-8">
         {% render_table table 'django_tables2/bootstrap.html' %}

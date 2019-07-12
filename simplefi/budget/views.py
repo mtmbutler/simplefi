@@ -1,15 +1,18 @@
+import csv
 import datetime
+import os
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, FileResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views import generic
+from django.views import generic, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView, FilterMixin
 from django_tables2 import Column
@@ -433,3 +436,25 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
     def get_success_url(self) -> str:
         return reverse_lazy('budget:transaction-list')
+
+
+class TransactionDownloadView(LoginRequiredMixin, View):
+    def get(self, *args, **kwargs) -> 'FileResponse':
+        qs = models.Transaction.objects.filter(user=self.request.user)
+
+        # Create the CSV
+        now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
+        temp_path = os.path.join(settings.MEDIA_ROOT, f'transactions_{now}.csv')
+        with open(temp_path, 'w') as f:
+            fieldnames = ['account', 'date', 'amount', 'description']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for t in qs.all():
+                writer.writerow(dict(
+                    account=t.upload.account.name,
+                    date=t.date.strftime('%Y-%m-%d'),
+                    amount=str(t.amount),
+                    description=t.description))
+
+        # Return the response
+        return FileResponse(open(temp_path, 'rb'), as_attachment=True)
