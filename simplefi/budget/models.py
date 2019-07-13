@@ -1,7 +1,7 @@
 import csv
 import datetime
 import os
-from typing import Any, Mapping, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from django.conf import settings
@@ -291,6 +291,7 @@ class Transaction(UserDataModel):
 
 
 class CSVBackup(UserDataModel):
+    NO_CSV_MSG = "No CSV associated with selected backup."
     BACKUP_FIELDS = ['Account', 'Class', 'Category',
                      'Date', 'Amount', 'Description']
 
@@ -329,10 +330,16 @@ class CSVBackup(UserDataModel):
         self.save()
 
     def file_response(self) -> 'FileResponse':
-        # Todo: handle when there is no CSV
+        """Serves up the CSV as a download."""
+        if self.csv is None:
+            now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
+            path = os.path.join(settings.MEDIA_ROOT, f'error_{now}.txt')
+            with open(path, 'w') as f:
+                f.write(self.NO_CSV_MSG)
+            return FileResponse(open(path, 'rb'), as_attachment=True)
         return FileResponse(self.csv, as_attachment=True)
 
-    def restore(self):
+    def restore(self) -> bool:
         """Restores the user's database from the CSV.
 
         To avoid hitting the database on every row, make two passes
@@ -344,10 +351,14 @@ class CSVBackup(UserDataModel):
           2. Read all the transactions, assigning the objects from the
              first pass as necessary
 
-        After the second pass, bu
+        After the second pass, bulk insert all the transactions. If
+        everything goes ok, return True, otherwise False.
         """
         raise Exception("Write me!")
-        # Todo: handle when there is no CSV
+        if self.csv is None:
+            print(self.NO_CSV_MSG)
+            return False
+
         with open(self.csv.path) as f:
             # First pass
             reader = csv.DictReader(f, fieldnames=self.BACKUP_FIELDS)
@@ -362,3 +373,5 @@ class CSVBackup(UserDataModel):
             transactions = []
             for row in reader:
                 pass  # Todo
+
+        return True
