@@ -8,7 +8,6 @@ from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_tables2 import Column
 from django_tables2.views import SingleTableView
-from django_tables2.export.views import ExportMixin
 
 from debt import models, tables
 from debt.utils import debt_summary
@@ -75,7 +74,7 @@ class AuthForeignKeyMixin:
 
 
 # -- ACCOUNTS --
-class AccountList(LoginRequiredMixin, SingleTableView, ExportMixin):
+class AccountList(LoginRequiredMixin, SingleTableView):
     model = models.CreditLine
     table_class = tables.CreditLineTable
     template_name = 'debt/account-list.html'

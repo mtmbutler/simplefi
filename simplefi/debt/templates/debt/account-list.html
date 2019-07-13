@@ -1,12 +1,10 @@
 {% extends "debt_base.html" %}
-{% load export_url from django_tables2 %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
 
 {% block content %}
     <h2>Accounts</h2>
     <a href="{% url 'debt:account-add' %}">{% bootstrap_button 'Add New Account' %}</a>
-      {#  <a href="{% export_url "csv" %}">{% bootstrap_button 'Download CSV' %}</a>#}
       <div class="container-fluid">
         <div class="row">
           {% render_table table 'django_tables2/bootstrap.html' %}

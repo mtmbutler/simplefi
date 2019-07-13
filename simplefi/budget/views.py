@@ -16,7 +16,6 @@ from django.views import generic, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView, FilterMixin
 from django_tables2 import Column
-from django_tables2.export.views import ExportMixin
 from django_tables2.views import SingleTableMixin, SingleTableView
 
 from budget import forms, models, tables
@@ -138,7 +137,7 @@ class TransactionTableMixin(SingleTableMixin, FilterMixin):
 
 
 # -- ACCOUNTS --
-class AccountList(LoginRequiredMixin, SingleTableView, ExportMixin):
+class AccountList(LoginRequiredMixin, SingleTableView):
     model = models.Account
     table_class = tables.AccountTable
     template_name = 'budget/account-list.html'
@@ -439,22 +438,7 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 class TransactionDownloadView(LoginRequiredMixin, View):
-    def get(self, *args, **kwargs) -> 'FileResponse':
-        qs = models.Transaction.objects.filter(user=self.request.user)
-
-        # Create the CSV
-        now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
-        temp_path = os.path.join(settings.MEDIA_ROOT, f'transactions_{now}.csv')
-        with open(temp_path, 'w') as f:
-            fieldnames = ['account', 'date', 'amount', 'description']
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            for t in qs.all():
-                writer.writerow(dict(
-                    account=t.upload.account.name,
-                    date=t.date.strftime('%Y-%m-%d'),
-                    amount=str(t.amount),
-                    description=t.description))
-
-        # Return the response
-        return FileResponse(open(temp_path, 'rb'), as_attachment=True)
+    def get(self, *_, **__) -> 'FileResponse':
+        backup = models.CSVBackup(user=self.request.user)
+        backup.create_backup()
+        return backup.file_response()

@@ -1,9 +1,13 @@
-from typing import TYPE_CHECKING
+import csv
+import datetime
+import os
+from typing import Any, Mapping, TYPE_CHECKING
 
 import pandas as pd
 from django.conf import settings
 from django.db import models, IntegrityError
 from django.core.exceptions import ValidationError
+from django.http import FileResponse
 from django.urls import reverse
 from django.utils import timezone
 
@@ -284,3 +288,77 @@ class Transaction(UserDataModel):
             return self.description
         else:
             return self.description[:self.DESC_TRUNC_LEN] + '...'
+
+
+class CSVBackup(UserDataModel):
+    BACKUP_FIELDS = ['Account', 'Class', 'Category',
+                     'Date', 'Amount', 'Description']
+
+    creation_time = models.DateTimeField('Created', auto_now_add=True)
+    csv = models.FileField(upload_to='csvs', null=True)
+
+    def __str__(self):
+        return self.creation_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    def create_backup(self):
+        """Saves all user transactions to a CSV FileField.
+
+        Includes account name, class name, and category name in addition
+        to the base model fields.
+        """
+        qs = Transaction.objects.filter(
+            user=self.user
+        ).order_by('upload__account', 'date')
+
+        # Create the CSV
+        now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
+        path = os.path.join(settings.MEDIA_ROOT, 'csvs', f'transactions_{now}.csv')
+        with open(path, 'w') as f:
+            writer = csv.DictWriter(f, fieldnames=self.BACKUP_FIELDS)
+            writer.writeheader()
+            for t in qs.all():
+                writer.writerow({
+                    'Account': t.account.name,
+                    'Class': t.class_field.name.title(),
+                    'Category': t.category.name,
+                    'Date': t.date.strftime('%Y-%m-%d'),
+                    'Amount': str(t.amount),
+                    'Description': t.description})
+
+        self.csv.name = path
+        self.save()
+
+    def file_response(self) -> 'FileResponse':
+        # Todo: handle when there is no CSV
+        return FileResponse(self.csv, as_attachment=True)
+
+    def restore(self):
+        """Restores the user's database from the CSV.
+
+        To avoid hitting the database on every row, make two passes
+        through the csv:
+          1. Identify any accounts not in the database and create them,
+             plus upload objects to associate the transactions with.
+             Also Identify any categories not in the database and create
+             them
+          2. Read all the transactions, assigning the objects from the
+             first pass as necessary
+
+        After the second pass, bu
+        """
+        raise Exception("Write me!")
+        # Todo: handle when there is no CSV
+        with open(self.csv.path) as f:
+            # First pass
+            reader = csv.DictReader(f, fieldnames=self.BACKUP_FIELDS)
+            accounts = []
+            uploads = []
+            categories = []
+            for row in reader:
+                pass  # Todo
+
+            # Second pass
+            reader = csv.DictReader(f, fieldnames=self.BACKUP_FIELDS)
+            transactions = []
+            for row in reader:
+                pass  # Todo
