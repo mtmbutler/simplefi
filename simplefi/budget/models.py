@@ -346,13 +346,16 @@ class CSVBackup(UserDataModel):
         through the csv:
           1. Identify any accounts not in the database and create them,
              plus upload objects to associate the transactions with.
-             Also Identify any categories not in the database and create
-             them
           2. Read all the transactions, assigning the objects from the
              first pass as necessary
 
         After the second pass, bulk insert all the transactions. If
         everything goes ok, return True, otherwise False.
+
+        Categories from the backup CSV are just for user convenience if
+        they want to do their own analysis -- they're not used on
+        re-upload. Instead, the user's patterns are used to re-assign
+        the categories, just as with a normal CSV upload.
         """
         raise Exception("Write me!")
         if self.csv is None:
@@ -363,8 +366,6 @@ class CSVBackup(UserDataModel):
             # First pass
             reader = csv.DictReader(f, fieldnames=self.BACKUP_FIELDS)
             accounts = []
-            uploads = []
-            categories = []
             for row in reader:
                 pass  # Todo
 
