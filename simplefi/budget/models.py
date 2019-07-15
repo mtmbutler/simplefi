@@ -1,7 +1,7 @@
 import csv
 import datetime
 import os
-from typing import TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 
 import pandas as pd
 from django.conf import settings
@@ -96,7 +96,6 @@ class Upload(UserDataModel):
         try:
             df = pd.read_csv(
                 self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
-        # Todo: probably more issues to catch here
         except ValueError as e:
             return str(e)
         df.columns = [c.strip() for c in df.columns]
@@ -104,7 +103,7 @@ class Upload(UserDataModel):
             df = df[columns]
         except KeyError:
             return (f"Not all specified columns {columns} found in CSV"
-                    f" header {df.columns.tolist()}")
+                    f" header {list(df.columns)}")
 
         # Create transaction objects
         err = None
@@ -339,40 +338,77 @@ class CSVBackup(UserDataModel):
             return FileResponse(open(path, 'rb'), as_attachment=True)
         return FileResponse(self.csv, as_attachment=True)
 
-    def restore(self) -> bool:
+    def restore(self) -> str:
         """Restores the user's database from the CSV.
 
-        To avoid hitting the database on every row, make two passes
-        through the csv:
-          1. Identify any accounts not in the database and create them,
-             plus upload objects to associate the transactions with.
-          2. Read all the transactions, assigning the objects from the
-             first pass as necessary
-
-        After the second pass, bulk insert all the transactions. If
-        everything goes ok, return True, otherwise False.
+        First, identifies any accounts that aren't already in the
+        database, and creates them. Second, creates an upload for each
+        account to associate with the transactions. Then, parses through
+        all the transactions and adds them to the DB.
 
         Categories from the backup CSV are just for user convenience if
         they want to do their own analysis -- they're not used on
         re-upload. Instead, the user's patterns are used to re-assign
         the categories, just as with a normal CSV upload.
+
+        Returns a status message.
         """
-        raise Exception("Write me!")
         if self.csv is None:
-            print(self.NO_CSV_MSG)
-            return False
+            return self.NO_CSV_MSG
 
-        with open(self.csv.path) as f:
-            # First pass
-            reader = csv.DictReader(f, fieldnames=self.BACKUP_FIELDS)
-            accounts = []
-            for row in reader:
-                pass  # Todo
+        # Read CSV
+        try:
+            df = pd.read_csv(
+                self.csv.path, usecols=self.BACKUP_FIELDS,
+                infer_datetime_format=True)
+        except ValueError as e:
+            return str(e)
 
-            # Second pass
-            reader = csv.DictReader(f, fieldnames=self.BACKUP_FIELDS)
-            transactions = []
-            for row in reader:
-                pass  # Todo
+        # Build dict of accounts, creating new ones as needed
+        accounts = {}  # type: Dict[str, Account]
+        for acc_name in df['Account'].unique():
+            acc_obj, __ = Account.objects.get_or_create(
+                user=self.user, name=acc_name,
+                defaults=dict(date_col_name='Date',
+                              amt_col_name='Amount',
+                              desc_col_name='Description'))
+            accounts['acc_name'] = acc_obj
 
-        return True
+        # Create new uploads to associate with each account
+        uploads = {}  # type: Dict[str, Upload]
+        for acc_name, account in accounts.items():
+            uploads[acc_name] = Upload(user=self.user, account=account,
+                                       csv=self.csv)
+        Upload.objects.bulk_create(uploads.values())
+
+        # Iterate through transactions
+        err = None
+        for __, r in df.iterrows():
+            t = Transaction(
+                user=self.user,
+                upload=uploads[r['Account']],
+                date=r['Date'],
+                amount=r['Amount'],
+                description=r['Description'],
+                pattern=None)
+            try:
+                t.save()
+            except (IntegrityError, ValidationError) as e:
+                if isinstance(e, ValidationError):
+                    err = f"Validation error: {e}"
+                    break
+                continue
+
+        if err:
+            return err
+
+        # Classify
+        patterns = (
+            Pattern.objects
+            .filter(user=self.user)
+            .annotate(matches=models.Count('transaction'))
+            .order_by('-matches'))  # Start with most-used patterns
+        for p in patterns:
+            p.match_transactions()
+
+        return Upload.SUCCESS_CODE
