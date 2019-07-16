@@ -295,7 +295,7 @@ class CSVBackup(UserDataModel):
                      'Date', 'Amount', 'Description']
 
     creation_time = models.DateTimeField('Created', auto_now_add=True)
-    csv = models.FileField(upload_to='csvs', null=True)
+    csv = models.FileField('CSV', upload_to='csvs', null=True)
 
     def __str__(self):
         return self.creation_time.strftime('%Y-%m-%d %H:%M:%S')

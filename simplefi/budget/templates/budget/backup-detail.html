@@ -1,0 +1,13 @@
+{% extends "budget_base.html" %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+
+{% block content %}
+  <h2>Backup: {{ backup.creation_time }}</h2>
+  <div class="container-fluid">
+    <div class="row">
+        <a href="{{ csvbackup.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
+        <a href="{% url 'budget:backup-delete' csvbackup.id %}">{% bootstrap_button 'Delete' %}</a>
+    </div>
+  </div>
+{% endblock %}

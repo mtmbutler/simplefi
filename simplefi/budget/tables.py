@@ -61,6 +61,19 @@ class AccountTable(tables.Table):
                   'desc_col_name', 'num_transactions']
 
 
+# -- BACKUPS --
+class BackupTable(tables.Table):
+    creation_time = tables.Column(
+        accessor='creation_time',
+        linkify=("budget:backup-detail", {"pk": tables.A("pk")}))
+    csv = tables.Column(accessor='csv')
+
+    class Meta:
+        model = models.CSVBackup
+        exclude = ('user', 'id')
+        fields = ['creation_time', 'csv']
+
+
 # -- UPLOADS --
 class UploadFilter(filters.FilterSet):
     account = filters.ModelChoiceFilter(

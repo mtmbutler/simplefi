@@ -13,6 +13,12 @@ urlpatterns = [
     path('accounts/<int:pk>/update/', views.AccountUpdate.as_view(), name='account-update'),
     path('accounts/<int:pk>/delete/', views.AccountDelete.as_view(), name='account-delete'),
     
+    # Backups
+    path('backups/', views.BackupList.as_view(), name='backup-list'),
+    path('backups/add/', views.BackupCreate.as_view(), name='backup-add'),
+    path('backups/<int:pk>/', views.BackupView.as_view(), name='backup-detail'),
+    path('backups/<int:pk>/delete/', views.BackupDelete.as_view(), name='backup-delete'),
+    
     # Uploads
     path('uploads/', views.UploadList.as_view(), name='upload-list'),
     path('uploads/add/', views.UploadCreate.as_view(), name='upload-add'),

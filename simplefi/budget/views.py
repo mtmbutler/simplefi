@@ -1,10 +1,7 @@
-import csv
 import datetime
-import os
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
@@ -179,6 +176,35 @@ class AccountDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Account
     success_url = reverse_lazy('budget:account-list')
     template_name = 'budget/account-delete.html'
+
+
+# -- CSV BACKUPS --
+class BackupList(LoginRequiredMixin, SingleTableView):
+    model = models.CSVBackup
+    table_class = tables.BackupTable
+    template_name = 'budget/backup-list.html'
+
+    def get_table_data(self) -> 'QuerySet':
+        qs = super().get_table_data()
+        return qs.filter(user=self.request.user)
+
+
+class BackupView(LoginRequiredMixin, generic.DetailView):
+    model = models.CSVBackup
+    template_name = 'budget/backup-detail.html'
+
+
+class BackupCreate(LoginRequiredMixin, AuthCreateFormMixin,
+                   AuthForeignKeyMixin, CreateView):
+    model = models.CSVBackup
+    fields = ['csv']
+    template_name = 'budget/backup-add.html'
+
+
+class BackupDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
+    model = models.CSVBackup
+    success_url = reverse_lazy('budget:backup-list')
+    template_name = 'budget/backup-delete.html'
 
 
 # -- UPLOADS --
