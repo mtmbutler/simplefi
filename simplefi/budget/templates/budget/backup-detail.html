@@ -3,7 +3,7 @@
 {% load bootstrap3 %}
 
 {% block content %}
-  <h2>Backup: {{ backup.creation_time }}</h2>
+  <h2>Backup: {{ csvbackup }}</h2>
   <div class="container-fluid">
     <div class="row">
         <a href="{{ csvbackup.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
