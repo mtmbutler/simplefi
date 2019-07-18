@@ -130,6 +130,12 @@ class TestDetailViews:
             'budget:transaction-detail', search_str=TEST_NAME,
             obj_params={'description': TEST_NAME})
 
+    def test_backup_detail_view(self, client, django_user_model):
+        self.detail_view_test(
+            client, django_user_model, 'budget.CSVBackup',
+            'budget:backup-detail',
+            obj_params={'_create_files': True})
+
 
 class TestListViews:
     @staticmethod
@@ -157,6 +163,11 @@ class TestListViews:
     def test_upload_list_view(self, client, django_user_model):
         url = 'budget:upload-list'
         template = 'budget/upload-list.html'
+        self.list_view_test(client, django_user_model, url, template)
+
+    def test_backup_list_view(self, client, django_user_model):
+        url = 'budget:backup-list'
+        template = 'budget/backup-list.html'
         self.list_view_test(client, django_user_model, url, template)
 
 
@@ -260,6 +271,25 @@ class TestCreateViews:
 
         obj_params = dict(
             upload_time=today_str(), account=acc.id, csv=csv)
+
+        self.create_view_test(
+            client, model, url, template, user,
+            obj_params=obj_params, file_field='csv')
+        os.remove(csv)
+
+    def test_backup_create_view(self, client, django_user_model):
+        url = 'budget:backup-add'
+        model = 'budget.CSVBackup'
+        template = 'budget/backup-add.html'
+        user = login(client, django_user_model)
+
+        # Create file
+        content = ','.join(
+            ['Account', 'Class', 'Category',
+             'Date', 'Amount', 'Description'])
+        csv = temp_file(content=content)
+
+        obj_params = dict(creation_time=today_str(), csv=csv)
 
         self.create_view_test(
             client, model, url, template, user,
@@ -421,4 +451,9 @@ class TestDeleteViews:
     def test_upload_delete_view(self, client, django_user_model):
         model = 'budget.Upload'
         url = 'budget:upload-delete'
+        self.delete_view_test(client, django_user_model, model, url)
+
+    def test_backup_delete_view(self, client, django_user_model):
+        model = 'budget.CSVBackup'
+        url = 'budget:backup-delete'
         self.delete_view_test(client, django_user_model, model, url)

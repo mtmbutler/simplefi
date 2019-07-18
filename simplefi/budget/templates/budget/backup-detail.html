@@ -6,7 +6,9 @@
   <h2>Backup: {{ csvbackup }}</h2>
   <div class="container-fluid">
     <div class="row">
-        <a href="{{ csvbackup.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
+        {% if csvbackup.csv %}
+            <a href="{{ csvbackup.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
+        {% endif %}
         <a href="{% url 'budget:backup-delete' csvbackup.id %}">{% bootstrap_button 'Delete' %}</a>
     </div>
   </div>

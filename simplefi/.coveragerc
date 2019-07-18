@@ -4,6 +4,10 @@ branch = False
 omit =
     */venv/*
     */migrations/*
+    */tests/*
+    */__init__.py
+    */urls.py
+    */settings.py
 
 [report]
 # Regexes for lines to exclude from consideration

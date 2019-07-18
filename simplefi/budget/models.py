@@ -300,6 +300,9 @@ class CSVBackup(UserDataModel):
     def __str__(self):
         return self.creation_time.strftime('%Y-%m-%d %H:%M:%S')
 
+    def get_absolute_url(self) -> str:
+        return reverse('budget:backup-detail', kwargs={'pk': self.pk})
+
     def create_backup(self):
         """Saves all user transactions to a CSV FileField.
 
