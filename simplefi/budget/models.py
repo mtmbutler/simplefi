@@ -290,6 +290,7 @@ class Transaction(UserDataModel):
 
 
 class CSVBackup(UserDataModel):
+    SUCCESS_CODE = 'success'
     NO_CSV_MSG = "No CSV associated with selected backup."
     BACKUP_FIELDS = ['Account', 'Class', 'Category',
                      'Date', 'Amount', 'Description']
@@ -375,14 +376,14 @@ class CSVBackup(UserDataModel):
                 defaults=dict(date_col_name='Date',
                               amt_col_name='Amount',
                               desc_col_name='Description'))
-            accounts['acc_name'] = acc_obj
+            accounts[acc_name] = acc_obj
 
         # Create new uploads to associate with each account
         uploads = {}  # type: Dict[str, Upload]
         for acc_name, account in accounts.items():
-            uploads[acc_name] = Upload(user=self.user, account=account,
-                                       csv=self.csv)
-        Upload.objects.bulk_create(uploads.values())
+            ul_obj = Upload.objects.create(
+                user=self.user, account=account, csv=self.csv)
+            uploads[acc_name] = ul_obj
 
         # Iterate through transactions
         err = None
@@ -414,4 +415,4 @@ class CSVBackup(UserDataModel):
         for p in patterns:
             p.match_transactions()
 
-        return Upload.SUCCESS_CODE
+        return CSVBackup.SUCCESS_CODE

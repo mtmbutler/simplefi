@@ -1,11 +1,12 @@
 import datetime
 import os
-from typing import TYPE_CHECKING
+from typing import Type, TYPE_CHECKING
 
 import pandas as pd
 from django.apps import apps
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Sum
 from model_mommy import mommy
 
 from budget.tests.utils import login
@@ -14,11 +15,185 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.test import Client
 
+    from budget import models
+
 
 DAYS_PER_YEAR = 365
 
 
-class TestMethods:
+class TestBackups:
+    def test_backup_restore_clean(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        acc_model = apps.get_model('budget.Account')     # type: Type[models.Account]
+        ul_model = apps.get_model('budget.Upload')       # type: Type[models.Upload]
+        for model in (bak_model, tr_model, acc_model, ul_model):
+            assert model.objects.count() == 0
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Class=['', ''],
+            Category=['', ''],
+            Date=['2018-11-10', '2018-11-11'],
+            Amount=[5.54, 3.99],
+            Description=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            # Create the backup object and restore
+            bak = mommy.make(bak_model, user=user, csv=temp_path)
+            with transaction.atomic():
+                msg = bak.restore()
+
+            # There should now be two transactions attached to one
+            # upload and one account, and msg should be a success code
+            assert tr_model.objects.count() == 2
+            assert float(tr_model.objects.aggregate(Sum('amount'))['amount__sum']) == 9.53
+            assert acc_model.objects.count() == 1
+            assert acc_model.objects.first().name == 'Checking'
+            assert acc_model.objects.first().num_transactions == 2
+            assert ul_model.objects.count() == 1
+            assert ul_model.objects.first().account.name == 'Checking'
+            assert ul_model.objects.first().num_transactions == 2
+            assert msg == 'success'
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
+
+    def test_backup_restore_wrong_header(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        acc_model = apps.get_model('budget.Account')     # type: Type[models.Account]
+        ul_model = apps.get_model('budget.Upload')       # type: Type[models.Upload]
+        for model in (bak_model, tr_model, acc_model, ul_model):
+            assert model.objects.count() == 0
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Class=['', ''],
+            Category=['', ''],
+            Date=['2018-11-10', '2018-11-11'],
+            Bad_amt_col_name=[5.54, 3.99],
+            Description=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            # Create the backup object and restore
+            bak = mommy.make(bak_model, user=user, csv=temp_path)
+            with transaction.atomic():
+                msg = bak.restore()
+
+            # It should have failed because of the incorrect header
+            assert tr_model.objects.count() == 0
+            assert acc_model.objects.count() == 0
+            assert ul_model.objects.count() == 0
+            assert 'columns expected but not found' in msg
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
+
+    def test_backup_restore_bad_date_format(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        acc_model = apps.get_model('budget.Account')     # type: Type[models.Account]
+        ul_model = apps.get_model('budget.Upload')       # type: Type[models.Upload]
+        for model in (bak_model, tr_model, acc_model, ul_model):
+            assert model.objects.count() == 0
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Class=['', ''],
+            Category=['', ''],
+            Date=['2018-11-100', '2018-11-11'],
+            Amount=[5.54, 3.99],
+            Description=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            # Create the backup object and restore
+            bak = mommy.make(bak_model, user=user, csv=temp_path)
+            with transaction.atomic():
+                msg = bak.restore()
+
+            # It should have failed because of the incorrect date format
+            assert tr_model.objects.count() == 0
+            assert acc_model.objects.count() == 0
+            assert ul_model.objects.count() == 0
+            assert 'invalid date format' in msg
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
+
+    def test_backup_restore_str_in_value_col(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        acc_model = apps.get_model('budget.Account')     # type: Type[models.Account]
+        ul_model = apps.get_model('budget.Upload')       # type: Type[models.Upload]
+        for model in (bak_model, tr_model, acc_model, ul_model):
+            assert model.objects.count() == 0
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Class=['', ''],
+            Category=['', ''],
+            Date=['2018-11-10', '2018-11-11'],
+            Amount=['five dollars', 3.99],
+            Description=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            # Create the backup object and restore
+            bak = mommy.make(bak_model, user=user, csv=temp_path)
+            with transaction.atomic():
+                msg = bak.restore()
+
+            # It should have failed because of the incorrect date format
+            assert tr_model.objects.count() == 0
+            assert acc_model.objects.count() == 0
+            assert ul_model.objects.count() == 0
+            assert 'Validation error' in msg
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
+
+
+class TestUploads:
     def test_upload_parse_transactions_clean(
         self,
         client: 'Client',
@@ -142,6 +317,8 @@ class TestMethods:
         # Cleanup
         os.remove(temp_path)
 
+
+class TestPatterns:
     def test_pattern_match_transactions(
         self,
         client: 'Client',
