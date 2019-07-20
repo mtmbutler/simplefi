@@ -267,15 +267,15 @@ class Transaction(UserDataModel):
 
     @property
     def class_field(self) -> 'TransactionClass':
-        return self.pattern.class_field
+        return getattr(self.pattern, 'class_field', None)
 
     @property
     def category(self) -> 'Category':
-        return self.pattern.category
+        return getattr(self.pattern, 'category', None)
 
     @property
     def account(self) -> 'Account':
-        return self.upload.account
+        return getattr(self.upload, 'account', None)
 
     @property
     def fmt_amt(self) -> str:
@@ -283,7 +283,9 @@ class Transaction(UserDataModel):
 
     @property
     def trunc_desc(self) -> str:
-        if len(self.description) <= self.DESC_TRUNC_LEN:
+        if not self.description:
+            return ''
+        elif len(self.description) <= self.DESC_TRUNC_LEN:
             return self.description
         else:
             return self.description[:self.DESC_TRUNC_LEN] + '...'
@@ -322,9 +324,9 @@ class CSVBackup(UserDataModel):
             writer.writeheader()
             for t in qs.all():
                 writer.writerow({
-                    'Account': t.account.name,
-                    'Class': t.class_field.name.title(),
-                    'Category': t.category.name,
+                    'Account': getattr(t.account, 'name', 'No Account'),
+                    'Class': getattr(t.class_field, 'name', '').title(),
+                    'Category': getattr(t.category, 'name', ''),
                     'Date': t.date.strftime('%Y-%m-%d'),
                     'Amount': str(t.amount),
                     'Description': t.description})
@@ -334,7 +336,7 @@ class CSVBackup(UserDataModel):
 
     def file_response(self) -> 'FileResponse':
         """Serves up the CSV as a download."""
-        if self.csv is None:
+        if not self.csv:
             now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
             path = os.path.join(settings.MEDIA_ROOT, f'error_{now}.txt')
             with open(path, 'w') as f:
@@ -357,7 +359,7 @@ class CSVBackup(UserDataModel):
 
         Returns a status message.
         """
-        if self.csv is None:
+        if not self.csv:
             return self.NO_CSV_MSG
 
         # Read CSV

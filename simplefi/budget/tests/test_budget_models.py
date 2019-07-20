@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 from typing import Type, TYPE_CHECKING
 
@@ -22,6 +23,64 @@ DAYS_PER_YEAR = 365
 
 
 class TestBackups:
+    def test_backup_create_no_transactions(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+        bak = mommy.make(bak_model, csv=None)
+        assert bak_model.objects.count() == 1
+
+        # Create the backup
+        bak.create_backup()
+
+        try:
+            with open(bak.csv.path) as f:
+                lines = list(f.readlines())
+
+            # No transactions, so should just be header
+            assert len(lines) == 1
+            assert lines[0] == 'Account,Class,Category,Date,Amount,Description\n'
+
+        finally:
+            # Cleanup
+            os.remove(bak.csv.path)
+
+    def test_backup_two_transactions(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        for model in (bak_model, tr_model):
+            assert model.objects.count() == 0
+
+        # Make transactions and create a backup
+        mommy.make(tr_model, user=user, amount=5.54)
+        mommy.make(tr_model, user=user, amount=3.99)
+        bak = mommy.make(bak_model, user=user, csv=None)
+        bak.create_backup()
+
+        try:
+            df = pd.read_csv(bak.csv.path)
+
+            # Should have 6 cols and 2 rows, and check amount sum
+            assert df.shape == (2, 6)
+            assert df.columns.tolist() == ['Account', 'Class', 'Category',
+                                           'Date', 'Amount', 'Description']
+            assert math.isclose(df['Amount'].sum(), 9.53, rel_tol=1e-9, abs_tol=0.0)
+
+        finally:
+            # Cleanup
+            os.remove(bak.csv.path)
+
     def test_backup_restore_clean(
         self,
         client: 'Client',
@@ -191,6 +250,51 @@ class TestBackups:
         finally:
             # Cleanup
             os.remove(temp_path)
+
+    def test_backup_file_response(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+
+        # Make a fake file
+        s = 'foo bar baz spam ham eggs'
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.txt')
+        with open(temp_path, 'w') as f:
+            f.write(s)
+
+        try:
+            bak = mommy.make(bak_model, csv=temp_path)
+            assert bak_model.objects.count() == 1
+            r = bak.file_response()
+            text = ''.join(line.decode('UTF-8')
+                           for line in r.streaming_content)
+            assert text == s
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
+
+    def test_backup_empty_file_response(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+
+        bak = mommy.make(bak_model, csv=None)
+        assert bak_model.objects.count() == 1
+        r = bak.file_response()
+        text = ''.join(line.decode('UTF-8')
+                       for line in r.streaming_content)
+        assert text == "No CSV associated with selected backup."
 
 
 class TestUploads:
