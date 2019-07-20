@@ -114,18 +114,14 @@ class TransactionTableMixin(SingleTableMixin, FilterMixin):
     @abstractmethod
     def exclude_cols(self, *_, **__) -> Tuple[str, ...]:
         """Columns to exclude from the table."""
-        return tuple()
 
     @abstractmethod
     def get_filter_kwargs(self, *_, **__) -> Dict[str, Any]:
         """Arguments to pass to the QuerySet filter on Transactions."""
-        return dict()
 
     def get_table_data(self, *args, **kwargs) -> 'QuerySet':
         kwargs = self.get_filter_kwargs(*args, **kwargs)
-        if kwargs:
-            return models.Transaction.objects.filter(**kwargs)
-        return models.Transaction.objects.all()
+        return models.Transaction.objects.filter(**kwargs)
 
     def get_table_kwargs(self, *args, **kwargs) -> Dict[str, Any]:
         d = super().get_table_kwargs()
