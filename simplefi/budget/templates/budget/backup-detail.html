@@ -7,7 +7,11 @@
   <div class="container-fluid">
     <div class="row">
         {% if csvbackup.csv %}
-            <a href="{{ csvbackup.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
+        <a href="{% url 'budget:backup-download' csvbackup.id %}">{% bootstrap_button 'Download CSV' %}</a>
+          <form action="{% url 'budget:backup-restore' csvbackup.id %}" method="post" class="form form-group">
+            {% csrf_token %}
+            {% bootstrap_button 'Restore Transactions' %}
+          </form>
         {% endif %}
         <a href="{% url 'budget:backup-delete' csvbackup.id %}">{% bootstrap_button 'Delete' %}</a>
     </div>

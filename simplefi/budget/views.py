@@ -9,7 +9,9 @@ from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect, FileResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views import generic, View
+from django.views import View
+from django.views.generic import TemplateView, DetailView, RedirectView
+from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView, FilterMixin
 from django_tables2 import Column
@@ -145,7 +147,7 @@ class AccountList(LoginRequiredMixin, SingleTableView):
 
 
 class AccountView(LoginRequiredMixin, TransactionTableMixin,
-                  generic.DetailView):
+                  DetailView):
     model = models.Account
     template_name = 'budget/account-detail.html'
 
@@ -189,16 +191,58 @@ class BackupList(LoginRequiredMixin, SingleTableView):
         return qs.filter(user=self.request.user)
 
 
-class BackupView(LoginRequiredMixin, generic.DetailView):
+class BackupUpload(LoginRequiredMixin, AuthCreateFormMixin,
+                   AuthForeignKeyMixin, CreateView):
+    """Upload a CSV for restore."""
+    model = models.CSVBackup
+    fields = ['csv']
+    template_name = 'budget/backup-add.html'
+
+
+class BackupCreateNew(LoginRequiredMixin, View):
+    """Create a new backup from current transaction data."""
+    def post(self, *_, **__) -> 'HttpResponseRedirect':
+        backup = models.CSVBackup(user=self.request.user)
+        backup.create_backup()
+        return HttpResponseRedirect(reverse_lazy('budget:backup-list'))
+
+
+class BackupPurgeAllConfirm(LoginRequiredMixin, TemplateView):
+    """A splash page with a button to purge all transactions."""
+    template_name = 'budget/backup-purge-confirm.html'
+
+
+class BackupPurgeAll(LoginRequiredMixin, View):
+    """Purges all transactions."""
+    def post(self, *_, **__) -> 'HttpResponseRedirect':
+        models.Transaction.objects.filter(user=self.request.user).delete()
+        return HttpResponseRedirect(reverse_lazy('budget:backup-list'))
+
+
+class BackupView(LoginRequiredMixin, DetailView):
     model = models.CSVBackup
     template_name = 'budget/backup-detail.html'
 
 
-class BackupCreate(LoginRequiredMixin, AuthCreateFormMixin,
-                   AuthForeignKeyMixin, CreateView):
-    model = models.CSVBackup
-    fields = ['csv']
-    template_name = 'budget/backup-add.html'
+class BackupDownload(LoginRequiredMixin, SingleObjectMixin, View):
+    """Gets the file response for a backup."""
+    def get(self, *_, **__) -> 'FileResponse':
+        return self.get_object(
+            queryset=models.CSVBackup.objects.filter(user=self.request.user)
+        ).file_response()
+
+
+class BackupRestore(LoginRequiredMixin, SingleObjectMixin, View):
+    """Restores transactions from a backup."""
+    def post(self, *_, **__) -> 'HttpResponseRedirect':
+        obj = self.get_object(
+            queryset=models.CSVBackup.objects.filter(user=self.request.user)
+        )  # type: models.CSVBackup
+        msg = obj.restore()
+        if msg != obj.SUCCESS_CODE:
+            messages.error(self.request, f"Restore failed: {msg}")
+
+        return HttpResponseRedirect(reverse_lazy('budget:backup-list'))
 
 
 class BackupDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
@@ -220,7 +264,7 @@ class UploadList(LoginRequiredMixin, SingleTableMixin, FilterView):
 
 
 class UploadView(LoginRequiredMixin, TransactionTableMixin,
-                 generic.DetailView):
+                 DetailView):
     model = models.Upload
     template_name = 'budget/upload-detail.html'
 
@@ -265,13 +309,13 @@ class UploadDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 # -- CLASSES --
 class BudgetUpdate(LoginRequiredMixin, AuthQuerySetMixin,
-                   AuthForeignKeyMixin, generic.UpdateView):
+                   AuthForeignKeyMixin, UpdateView):
     model = models.Budget
     fields = ['value']
     template_name = 'budget/budget-update.html'
 
 
-class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
+class ClassView(LoginRequiredMixin, DetailView, SingleTableMixin):
     model = models.TransactionClass
     template_name = 'budget/class-detail.html'
 
@@ -315,7 +359,7 @@ class ClassView(LoginRequiredMixin, generic.DetailView, SingleTableMixin):
 
 # -- CATEGORIES --
 class CategoryView(LoginRequiredMixin, TransactionTableMixin,
-                   generic.DetailView):
+                   DetailView):
     model = models.Category
     template_name = 'budget/category-detail.html'
 
@@ -349,7 +393,7 @@ class CategoryDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- PATTERNS --
-class PatternClassify(LoginRequiredMixin, generic.RedirectView):
+class PatternClassify(LoginRequiredMixin, RedirectView):
     pattern_name = 'budget:pattern-list'
 
     def get_redirect_url(self, *args, **kwargs) -> str:
@@ -359,7 +403,7 @@ class PatternClassify(LoginRequiredMixin, generic.RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class PatternDeclassify(LoginRequiredMixin, generic.RedirectView):
+class PatternDeclassify(LoginRequiredMixin, RedirectView):
     pattern_name = 'budget:pattern-list'
 
     def get_redirect_url(self, *args, **kwargs) -> str:
@@ -389,7 +433,7 @@ class PatternList(LoginRequiredMixin, SingleTableMixin, FilterView):
 
 
 class PatternView(LoginRequiredMixin, TransactionTableMixin,
-                  generic.DetailView):
+                  DetailView):
     model = models.Pattern
     template_name = 'budget/pattern-detail.html'
 
@@ -450,7 +494,7 @@ class TransactionList(LoginRequiredMixin, SingleTableMixin, FilterView):
 
 
 class TransactionView(LoginRequiredMixin, AuthQuerySetMixin,
-                      generic.DetailView):
+                      DetailView):
     model = models.Transaction
     template_name = 'budget/transaction-detail.html'
 
@@ -461,10 +505,3 @@ class TransactionDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
     def get_success_url(self) -> str:
         return reverse_lazy('budget:transaction-list')
-
-
-class TransactionDownloadView(LoginRequiredMixin, View):
-    def get(self, *_, **__) -> 'FileResponse':
-        backup = models.CSVBackup(user=self.request.user)
-        backup.create_backup()
-        return backup.file_response()

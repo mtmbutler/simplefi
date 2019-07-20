@@ -1,0 +1,16 @@
+{% extends "budget_base.html" %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+
+{% block content %}
+  <h2>Are you sure?</h2>
+    <p>
+    Pressing the button below will clear all your transaction data from
+    the server. Make sure you've already created a backup
+    <a href="{% url 'budget:backup-list' %}">here</a>.
+    </p>
+  <form action="{% url 'budget:backup-purge' %}" method="post" class="form form-group">
+    {% csrf_token %}
+    {% bootstrap_button 'Clear All Data' %}
+  </form>
+{% endblock %}

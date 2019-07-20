@@ -4,7 +4,12 @@
 
 {% block content %}
   <h2>Backups</h2>
-  <a href="{% url 'budget:backup-add' %}">{% bootstrap_button 'Add New Backup' %}</a>
+  <form action="{% url 'budget:backup-addnew' %}" method="post" class="form form-group">
+  {% csrf_token %}
+    {% bootstrap_button 'Create New Backup' %}
+  </form>
+  <a href="{% url 'budget:backup-add' %}">{% bootstrap_button 'Upload Backup File' %}</a>
+  <a href="{% url 'budget:backup-purge-confirm' %}">{% bootstrap_button 'Clear Transaction Data' %}</a>
   <div class="container-fluid">
     <div class="row">
       <div class="col-sm-8">

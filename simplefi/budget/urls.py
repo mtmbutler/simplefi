@@ -15,9 +15,14 @@ urlpatterns = [
     
     # Backups
     path('backups/', views.BackupList.as_view(), name='backup-list'),
-    path('backups/add/', views.BackupCreate.as_view(), name='backup-add'),
+    path('backups/add/', views.BackupUpload.as_view(), name='backup-add'),
+    path('backups/addnew/', views.BackupCreateNew.as_view(), name='backup-addnew'),
+    path('backups/purge_confirm/', views.BackupPurgeAllConfirm.as_view(), name='backup-purge-confirm'),
+    path('backups/purge/', views.BackupPurgeAll.as_view(), name='backup-purge'),
     path('backups/<int:pk>/', views.BackupView.as_view(), name='backup-detail'),
+    path('backups/<int:pk>/download/', views.BackupDownload.as_view(), name='backup-download'),
     path('backups/<int:pk>/delete/', views.BackupDelete.as_view(), name='backup-delete'),
+    path('backups/<int:pk>/restore/', views.BackupRestore.as_view(), name='backup-restore'),
     
     # Uploads
     path('uploads/', views.UploadList.as_view(), name='upload-list'),
@@ -47,6 +52,5 @@ urlpatterns = [
     # Transactions
     path('transactions/', views.TransactionList.as_view(), name='transaction-list'),
     path('transactions/<int:pk>/', views.TransactionView.as_view(), name='transaction-detail'),
-    path('transactions/<int:pk>/delete/', views.TransactionDelete.as_view(), name='transaction-delete'),
-    path('transactions/download/', views.TransactionDownloadView.as_view(), name='transaction-download')
+    path('transactions/<int:pk>/delete/', views.TransactionDelete.as_view(), name='transaction-delete')
 ]
