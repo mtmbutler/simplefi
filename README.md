@@ -1,5 +1,5 @@
 # SimpleFi
-[![Build Status](https://travis-ci.org/mtmbutler/simplefi.svg?branch=master)](https://travis-ci.org/mtmbutler/simplefi)
+[![Build Status](https://travis-ci.org/mtmbutler/simplefi.svg?branch=master)](https://travis-ci.org/mtmbutler/simplefi) [![codecov](https://codecov.io/gh/mtmbutler/simplefi/branch/master/graph/badge.svg)](https://codecov.io/gh/mtmbutler/simplefi)
 
 - Manage a database of transactions
   - Upload and process CSV's from your bank
