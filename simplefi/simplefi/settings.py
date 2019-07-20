@@ -20,6 +20,8 @@ from django.urls import reverse_lazy
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO_DIR = os.path.dirname(BASE_DIR)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'csvs'), exist_ok=True)
 CONFIG_PATH = os.path.join(REPO_DIR, 'config.yaml')
 
 # Get config
