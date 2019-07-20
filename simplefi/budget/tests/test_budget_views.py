@@ -1,15 +1,25 @@
 import datetime
+import math
 import os
 import random
 import string
+from typing import Type, TYPE_CHECKING
 
+import pandas as pd
 from django.apps import apps
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from model_mommy import mommy
 
 from budget.tests.utils import login
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.test import Client
+
+    from budget import models
 
 TEST_NAME = 'Scooby Doo'
 RAND_FILE_NAME_LENGTH = 20
@@ -61,6 +71,155 @@ def temp_file(content=''):
     with open(path, 'w') as f:
         f.write(content)
     return path
+
+
+class TestBackupViews:
+    def test_backup_create_new_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        url = 'budget:backup-addnew'
+
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')  # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+
+        # Make some transactions
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        assert tr_model.objects.count() == 0
+        mommy.make(tr_model, user=user, amount=5.54)
+        mommy.make(tr_model, user=user, amount=3.99)
+        assert tr_model.objects.count() == 2
+
+        # POST to the page
+        r = client.post(reverse(url))
+        assert r.status_code == 302
+        assert bak_model.objects.count() == 1
+        obj = bak_model.objects.first()  # type: models.CSVBackup
+
+        try:
+            # Check that the transactions are in the CSV
+            df = pd.read_csv(obj.csv)
+            assert df.shape == (2, 6)
+            assert math.isclose(df['Amount'].sum(), 9.53, rel_tol=1e-9, abs_tol=0.0)
+
+        finally:
+            os.remove(obj.csv.path)
+
+    def test_backup_purge_confirm_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        url = 'budget:backup-purge-confirm'
+        template = 'budget/backup-purge-confirm.html'
+        login(client, django_user_model)
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_backup_purge_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        url = 'budget:backup-purge'
+
+        # Setup
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')  # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+
+        # Make some transactions
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        assert tr_model.objects.count() == 0
+        mommy.make(tr_model, user=user, amount=5.54)
+        mommy.make(tr_model, user=user, amount=3.99)
+        assert tr_model.objects.count() == 2
+
+        # POST to the page
+        r = client.post(reverse(url))
+        assert r.status_code == 302
+        assert tr_model.objects.count() == 0
+
+    def test_backup_download_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        url = 'budget:backup-download'
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+
+        # Make a fake file
+        s = 'foo bar baz spam ham eggs'
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.txt')
+        with open(temp_path, 'w') as f:
+            f.write(s)
+
+        try:
+            bak = mommy.make(bak_model, user=user, csv=temp_path)
+            assert bak_model.objects.count() == 1
+            r = client.get(reverse(url, kwargs={'pk': bak.pk}))
+            text = ''.join(line.decode('UTF-8')
+                           for line in r.streaming_content)
+            assert text == s
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
+
+    def test_backup_restore_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        url = 'budget:backup-restore'
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        acc_model = apps.get_model('budget.Account')     # type: Type[models.Account]
+        ul_model = apps.get_model('budget.Upload')       # type: Type[models.Upload]
+        for model in (bak_model, tr_model, acc_model, ul_model):
+            assert model.objects.count() == 0
+
+        # Make a fake csv
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Class=['', ''],
+            Category=['', ''],
+            Date=['2018-11-10', '2018-11-11'],
+            Amount=[5.54, 3.99],
+            Description=['Eggs', 'Spam']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            # Create the backup object and restore
+            bak = mommy.make(bak_model, user=user, csv=temp_path)
+            r = client.post(reverse(url, kwargs={'pk': bak.pk}))
+            assert r.status_code == 302
+
+            # There should now be two transactions attached to one
+            # upload and one account, and msg should be a success code
+            assert tr_model.objects.count() == 2
+            assert float(tr_model.objects.aggregate(
+                models.Sum('amount'))['amount__sum']) == 9.53
+            assert acc_model.objects.count() == 1
+            assert acc_model.objects.first().name == 'Checking'
+            assert acc_model.objects.first().num_transactions == 2
+            assert ul_model.objects.count() == 1
+            assert ul_model.objects.first().account.name == 'Checking'
+            assert ul_model.objects.first().num_transactions == 2
+
+        finally:
+            # Cleanup
+            os.remove(temp_path)
 
 
 class TestOtherViews:
