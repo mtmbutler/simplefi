@@ -73,6 +73,67 @@ def temp_file(content=''):
     return path
 
 
+class TestPatternClassificationViews:
+    def test_classify_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        url = 'budget:classify'
+
+        # Setup
+        user = login(client, django_user_model)
+        pat_model = apps.get_model('budget.Pattern')     # type: Type[models.Pattern]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        assert pat_model.objects.count() == 0
+        assert tr_model.objects.count() == 0
+
+        # Make some transactions and a pattern
+        for i in range(3):
+            mommy.make(tr_model, user=user,
+                       description=f'transaction {i}',
+                       pattern=None)  # type: models.Transaction
+        assert tr_model.objects.count() == 3
+        pat = mommy.make(pat_model, user=user,
+                         pattern='transaction.*')  # type: models.Pattern
+        assert pat_model.objects.count() == 1
+
+        # GET the view and check that the pattern associated
+        r = client.get(reverse(url))
+        assert r.status_code == 302
+        assert pat.num_transactions == 3
+
+    def test_declassify_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        url = 'budget:declassify'
+
+        # Setup
+        user = login(client, django_user_model)
+        pat_model = apps.get_model('budget.Pattern')     # type: Type[models.Pattern]
+        tr_model = apps.get_model('budget.Transaction')  # type: Type[models.Transaction]
+        assert pat_model.objects.count() == 0
+        assert tr_model.objects.count() == 0
+
+        # Make some transactions and a pattern
+        pat = mommy.make(pat_model, user=user,
+                         pattern='transaction.*')  # type: models.Pattern
+        assert pat_model.objects.count() == 1
+        for i in range(3):
+            mommy.make(tr_model, user=user,
+                       description=f'transaction {i}',
+                       pattern=pat)  # type: models.Transaction
+        assert tr_model.objects.count() == 3
+        assert pat.num_transactions == 3
+
+        # GET the view and check that the pattern de-associated
+        r = client.get(reverse(url))
+        assert r.status_code == 302
+        assert pat.num_transactions == 0
+
+
 class TestBackupViews:
     def test_backup_create_new_view(
         self,
@@ -220,6 +281,24 @@ class TestBackupViews:
         finally:
             # Cleanup
             os.remove(temp_path)
+
+    def test_backup_failed_restore_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        url = 'budget:backup-restore'
+        user = login(client, django_user_model)
+        bak_model = apps.get_model('budget.CSVBackup')   # type: Type[models.CSVBackup]
+        assert bak_model.objects.count() == 0
+
+        # Create the backup object w/ no CSV and try to restore
+        bak = mommy.make(bak_model, user=user, csv=None)
+        r = client.post(reverse(url, kwargs={'pk': bak.pk}))
+        msgs = r.cookies['messages'].value
+        assert r.status_code == 302
+        assert 'Restore failed: No CSV associated' in msgs
 
 
 class TestOtherViews:
@@ -435,6 +514,31 @@ class TestCreateViews:
             client, model, url, template, user,
             obj_params=obj_params, file_field='csv')
         os.remove(csv)
+
+    def test_failed_upload_create_view(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        # Setup
+        url = 'budget:upload-add'
+        user = login(client, django_user_model)
+        acc_model = apps.get_model('budget.Account')  # type: Type[models.Account]
+        ul_model = apps.get_model('budget.Upload')    # type: Type[models.Upload]
+        assert acc_model.objects.count() == 0
+        acc = mommy.make(acc_model, user=user)
+        assert acc_model.objects.count() == 1
+        assert ul_model.objects.count() == 0
+        csv = temp_file()  # Not a valid backup CSV
+
+        # Try to create the upload object
+        with open(csv) as f:
+            r = client.post(reverse(url), data=dict(account=acc.id, csv=f))
+        print(r.__dict__)
+        msgs = r.cookies['messages'].value
+        assert r.status_code == 302
+        assert 'Upload failed:' in msgs
+        assert ul_model.objects.count() == 0
 
     def test_backup_create_view(self, client, django_user_model):
         url = 'budget:backup-add'
