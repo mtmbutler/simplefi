@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union, TYPE_CHECKING
+from typing import Any, List, Callable, Dict, Mapping, Tuple, Union, TYPE_CHECKING
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
@@ -152,18 +152,26 @@ class DebtSummary(LoginRequiredMixin, SingleTableView):
             user=self.request.user
         ).order_by('priority')
         extra_cols = []  # type: List[Tuple[str, Column]]
-        for cl in credit_lines:
-            name = cl.name
-            print(f"Defining lambda: {name}")
 
-            def linkme(record):
-                print(f"Inside lambda: {name}")
-                return tables.linkify_statement(name, record['month'])
+        def get_linkify_func(
+            col_name: str
+        ) -> Callable[[Mapping[str, Any]], str]:
+            """Returns a function to linkify each column.
+
+            This takes advantage of closures to generate a separate
+            linkify function for each column. See django-tables2 docs
+            for more information on what these callables look like.
+            """
+            def linkify_func(record: Mapping[str, Any]) -> str:
+                return tables.linkify_statement(col_name, record['month'])
+            return linkify_func
+
+        for cl in credit_lines:
             extra_cols.append(
                 (cl.name, Column(
                     attrs={'td': dict(align='right')},
                     orderable=False,
-                    linkify=lambda record: linkme(record)))
+                    linkify=get_linkify_func(cl.name)))
             )
 
         return {'extra_columns': extra_cols}

@@ -2,6 +2,7 @@ import datetime
 import os
 import random
 import string
+from typing import TYPE_CHECKING
 
 from django.apps import apps
 from django.db import models
@@ -10,6 +11,10 @@ from django.utils import timezone
 from model_mommy import mommy
 
 from debt.tests.utils import login
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.test import Client
 
 TEST_NAME = 'Scooby Doo'
 RAND_FILE_NAME_LENGTH = 20
@@ -80,6 +85,25 @@ class TestOtherViews:
         template = 'debt/debt_summary.html'
 
         login(client, django_user_model)
+
+        # Check the page
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_debt_summary_with_data(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        url = 'debt:debt-summary'
+        template = 'debt/debt_summary.html'
+
+        user = login(client, django_user_model)
+        acc1 = mommy.make('debt.CreditLine', user=user)
+        acc2 = mommy.make('debt.CreditLine', user=user)
+        mommy.make('debt.Statement', account=acc1, user=user)
+        mommy.make('debt.Statement', account=acc2, user=user)
 
         # Check the page
         response = client.get(reverse(url))
