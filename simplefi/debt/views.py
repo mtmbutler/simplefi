@@ -10,7 +10,7 @@ from django_tables2 import Column
 from django_tables2.views import SingleTableView
 
 from debt import models, tables
-from debt.utils import debt_summary
+from debt.utils import debt_summary, get_debt_budget
 
 if TYPE_CHECKING:
     from django.db.models import Model
@@ -139,8 +139,13 @@ class DebtSummary(LoginRequiredMixin, SingleTableView):
     table_class = tables.SummaryTable
     table_pagination = False
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['debt_budget'] = get_debt_budget(self.request.user)
+        return context
+
     def get_queryset(self) -> List[Dict[str, str]]:
-        return debt_summary(self.request.user)
+        return debt_summary(self.request)
 
     def get_table_kwargs(self) -> Dict[str, List[Tuple[str, Column]]]:
         credit_lines = models.CreditLine.objects.filter(

@@ -4,5 +4,13 @@
 
 {% block content %}
     <h2>Debt Summary</h2>
+    <p>
+        <b>Monthly Debt Budget:</b>
+        {% if debt_budget %}
+            <span>{{ debt_budget.value }} (<a href="{% url 'budget:budget-update' debt_budget.id %}">update</a>)</span>
+        {% else %}
+            (none specified)
+        {% endif %}
+    </p>
     {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}

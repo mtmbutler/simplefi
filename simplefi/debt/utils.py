@@ -1,8 +1,11 @@
 import calendar
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, Union, TYPE_CHECKING
 
+from django.contrib import messages
+from django.http import HttpRequest
 from django.utils import timezone
 
+from budget.models import Budget
 from debt.models import CreditLine, Statement
 
 if TYPE_CHECKING:
@@ -12,9 +15,17 @@ if TYPE_CHECKING:
 MAX_ROWS = 120
 
 
-def debt_summary(user: 'User') -> List[Dict[str, str]]:
+def get_debt_budget(user: 'User') -> Union['Budget', None]:
+    """Gets the specified budget for debt, or None if not specified."""
+    try:
+        return Budget.objects.get(user=user, class_field__name='debt')
+    except Budget.DoesNotExist:
+        return None
+
+
+def debt_summary(request: 'HttpRequest') -> List[Dict[str, str]]:
     """Generates a table showing the path out of debt."""
-    accs = CreditLine.objects.filter(user=user, credit_line__gt=0)
+    accs = CreditLine.objects.filter(user=request.user, credit_line__gt=0)
 
     # Get starting point
     earliest_dates = []
@@ -54,16 +65,20 @@ def debt_summary(user: 'User') -> List[Dict[str, str]]:
                     min_pay[a.name] = a.min_pay(bal=prev_bal)
 
         # Spend the debt budget
-        if len(min_pay) == accs.count():
-            budget = 1700  # Todo: make this configurable
+        budget_obj = get_debt_budget(request.user)
+        if budget_obj is None:
+            messages.warning(request, "No debt budget specified.")
+        elif len(min_pay) == accs.count():
+            budget = abs(budget_obj.value)
             budget -= sum(min_pay.values())
-            for a in accs.order_by('priority'):
-                if row[a.name] >= budget:
-                    row[a.name] -= budget
-                    break
-                else:
-                    budget -= row[a.name]
-                    row[a.name] = 0
+            if budget > 0:
+                for a in accs.order_by('priority'):
+                    if row[a.name] >= budget:
+                        row[a.name] -= budget
+                        break
+                    else:
+                        budget -= row[a.name]
+                        row[a.name] = 0
 
         # Add total column
         row.update(Total=sum(row.values()))
