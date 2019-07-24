@@ -1,0 +1,7 @@
+ignore:
+  - "**/venv"
+  - "**/migrations"
+  - "**/tests"
+  - "**/__init__.py"
+  - "**/urls.py"
+  - "**/settings.py"
