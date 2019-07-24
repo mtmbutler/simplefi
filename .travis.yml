@@ -9,7 +9,6 @@ python: 3.6
 
 # Install the codecov pip dependency
 install:
-  - pip install codecov
   - pip install -r requirements.txt
   - cp config.yaml.template config.yaml
 
