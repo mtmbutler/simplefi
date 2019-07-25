@@ -63,6 +63,13 @@ class CreditLine(UserDataModel):
         else:
             return None
 
+    @property
+    def latest_statement_date(self) -> Union['date', None]:
+        if self.statement_set.exists():
+            return self.statement_set.order_by('year', 'month').last().date
+        else:
+            return None
+
     def get_absolute_url(self) -> str:
         return reverse('debt:account-detail', kwargs={'pk': self.pk})
 

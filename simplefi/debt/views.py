@@ -173,5 +173,10 @@ class DebtSummary(LoginRequiredMixin, SingleTableView):
                     orderable=False,
                     linkify=get_linkify_func(cl.name)))
             )
+        extra_cols.append(
+            ('Total', Column(
+                attrs={'td': dict(align='right')},
+                orderable=False))
+        )
 
         return {'extra_columns': extra_cols}
