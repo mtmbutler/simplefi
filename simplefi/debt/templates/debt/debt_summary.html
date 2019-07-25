@@ -12,5 +12,6 @@
             (none specified)
         {% endif %}
     </p>
+    <a href="{% url 'debt:statement-download' %}">{% bootstrap_button 'Download Statement Data' %}</a>
     {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}

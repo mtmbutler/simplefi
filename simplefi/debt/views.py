@@ -1,8 +1,13 @@
+import csv
+import datetime
+import os
+import tempfile
 from typing import Any, List, Callable, Dict, Mapping, Tuple, Union, TYPE_CHECKING
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
+from django.http import FileResponse
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -132,6 +137,23 @@ class StatementDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Statement
     success_url = reverse_lazy('debt:account-list')
     template_name = 'debt/statement-delete.html'
+
+
+class StatementBulkDownload(LoginRequiredMixin, generic.View):
+    def get(self, *_, **__):
+        timestamp = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
+        path = os.path.join(tempfile.mkdtemp(), f'statements_{timestamp}.csv')
+        fieldnames = ['Account', 'Date', 'Balance']
+        qs = models.Statement.objects.filter(user=self.request.user).all()
+        with open(path, 'w') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for statement in qs:
+                writer.writerow(dict(
+                    Account=statement.account.name,
+                    Date=statement.date.strftime('%Y-%m-%d'),
+                    Balance=statement.balance))
+        return FileResponse(open(path, 'rb'), as_attachment=True)
 
 
 class DebtSummary(LoginRequiredMixin, SingleTableView):
