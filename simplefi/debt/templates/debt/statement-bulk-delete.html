@@ -1,0 +1,11 @@
+{% extends "debt_base.html" %}
+{% load bootstrap3 %}
+
+{% block content %}
+    <h2>Delete all statement data</h2>
+    <b>Are you sure?</b>
+    <form action="{% url 'debt:statement-bulk-delete' %}" method="POST">{% csrf_token %}
+        <button type="submit" class="save btn btn-default">Delete All</button>
+    </form>
+    <a href="{% url 'debt:debt-summary' %}">{% bootstrap_button 'Back to Summary' %}</a>
+{% endblock %}

@@ -12,6 +12,8 @@
             (none specified)
         {% endif %}
     </p>
-    <a href="{% url 'debt:statement-download' %}">{% bootstrap_button 'Download Statement Data' %}</a>
+    <a href="{% url 'debt:statement-download' %}">{% bootstrap_button 'Download Data' %}</a>
+    <a href="{% url 'debt:statement-bulk-update' %}">{% bootstrap_button 'Upload Data' %}</a>
+    <a href="{% url 'debt:statement-bulk-delete-confirm' %}">{% bootstrap_button 'Delete All' %}</a>
     {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}

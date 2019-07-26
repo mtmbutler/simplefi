@@ -16,6 +16,9 @@ urlpatterns = [
     # Statements
     path('statements/add/', views.StatementCreate.as_view(), name='statement-add'),
     path('statements/download/', views.StatementBulkDownload.as_view(), name='statement-download'),
+    path('statements/upload/', views.StatementBulkUpdate.as_view(), name='statement-bulk-update'),
+    path('statements/delete/confirm', views.StatementBulkDeleteConfirm.as_view(), name='statement-bulk-delete-confirm'),
+    path('statements/delete/', views.StatementBulkDelete.as_view(), name='statement-bulk-delete'),
     path('statements/<int:pk>/update/', views.StatementUpdate.as_view(), name='statement-update'),
     path('statements/<int:pk>/delete/', views.StatementDelete.as_view(), name='statement-delete'),
 

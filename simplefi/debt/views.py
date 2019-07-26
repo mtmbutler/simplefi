@@ -4,17 +4,19 @@ import os
 import tempfile
 from typing import Any, List, Callable, Dict, Mapping, Tuple, Union, TYPE_CHECKING
 
+import pandas as pd
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_tables2 import Column
 from django_tables2.views import SingleTableView
 
-from debt import models, tables
+from debt import forms, models, tables
 from debt.utils import debt_summary, get_debt_budget
 
 if TYPE_CHECKING:
@@ -154,6 +156,81 @@ class StatementBulkDownload(LoginRequiredMixin, generic.View):
                     Date=statement.date.strftime('%Y-%m-%d'),
                     Balance=statement.balance))
         return FileResponse(open(path, 'rb'), as_attachment=True)
+
+
+class StatementBulkUpdate(LoginRequiredMixin, generic.FormView):
+    form_class = forms.StatementBulkUpdateForm
+    success_url = reverse_lazy('debt:debt-summary')
+    template_name = 'debt/statement-bulk-update.html'
+
+    def form_valid(
+        self,
+        form: 'forms.StatementBulkUpdateForm'
+    ) -> 'HttpResponseRedirect':
+        # Read the CSV into a DataFrame
+        print(self.request.FILES)
+        path = self.request.FILES['csv']
+        try:
+            df = pd.read_csv(path, usecols=['Account', 'Date', 'Balance'],
+                             infer_datetime_format=True, parse_dates=['Date'])
+        except ValueError as e:
+            messages.error(self.request, f"Restore failed: {e}")
+            return self.form_invalid(form)
+
+        # Validate the accounts - Use get_or_create to see if there's
+        # already an account for each provided name, and raise a warning
+        # if there isn't.
+        acc_objs = {}  # type: Dict[str, models.CreditLine]
+        for acc_name in df.Account.unique():
+            acc, created = models.CreditLine.objects.get_or_create(
+                user=self.request.user, name=acc_name)
+            if created:
+                messages.warning(self.request, f"Unknown credit line: {acc_name}")
+                acc.delete()
+            else:
+                acc_objs[acc_name] = acc
+
+        # Add columns for year and month
+        # Todo: probably some exceptions to catch here
+        df['Year'] = df['Date'].dt.year
+        df['Month'] = df['Date'].dt.month
+
+        # Iterate through the data
+        counts = dict(
+            unknown_acc=0,
+            existing_not_overwritten=0,
+            new_stmnts=0)
+        for __, row in df.iterrows():
+            if row['Account'] not in acc_objs:
+                counts['unknown_acc'] += 1
+                continue
+            stmt, created = models.Statement.objects.get_or_create(
+                user=self.request.user, account=acc_objs[row['Account']],
+                year=row['Year'], month=row['Month'],
+                defaults={'balance': row['Balance']}
+            )
+            if not created:
+                counts['existing_not_overwritten'] += 1
+            else:
+                counts['new_stmnts'] += 1
+
+        # Add processing info to messages
+        for k, v in counts.items():
+            if not v:
+                continue
+            messages.info(self.request, f"{k}: {v}")
+
+        return super().form_valid(form)
+
+
+class StatementBulkDeleteConfirm(LoginRequiredMixin, generic.TemplateView):
+    template_name = 'debt/statement-bulk-delete.html'
+
+
+class StatementBulkDelete(LoginRequiredMixin, generic.View):
+    def post(self, *_, **__):
+        models.Statement.objects.filter(user=self.request.user).all().delete()
+        return HttpResponseRedirect(reverse_lazy('debt:debt-summary'))
 
 
 class DebtSummary(LoginRequiredMixin, SingleTableView):
