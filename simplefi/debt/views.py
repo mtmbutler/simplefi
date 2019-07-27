@@ -168,7 +168,6 @@ class StatementBulkUpdate(LoginRequiredMixin, generic.FormView):
         form: 'forms.StatementBulkUpdateForm'
     ) -> 'HttpResponseRedirect':
         # Read the CSV into a DataFrame
-        print(self.request.FILES)
         path = self.request.FILES['csv']
         try:
             df = pd.read_csv(path, usecols=['Account', 'Date', 'Balance'],
@@ -196,13 +195,14 @@ class StatementBulkUpdate(LoginRequiredMixin, generic.FormView):
         df['Month'] = df['Date'].dt.month
 
         # Iterate through the data
-        counts = dict(
-            unknown_acc=0,
-            existing_not_overwritten=0,
-            new_stmnts=0)
+        counts = {
+            'Unknown Accounts': 0,
+            'Existing Statements Not Overwritten': 0,
+            'New Statements Added': 0
+        }
         for __, row in df.iterrows():
             if row['Account'] not in acc_objs:
-                counts['unknown_acc'] += 1
+                counts['Unknown Accounts'] += 1
                 continue
             stmt, created = models.Statement.objects.get_or_create(
                 user=self.request.user, account=acc_objs[row['Account']],
@@ -210,9 +210,9 @@ class StatementBulkUpdate(LoginRequiredMixin, generic.FormView):
                 defaults={'balance': row['Balance']}
             )
             if not created:
-                counts['existing_not_overwritten'] += 1
+                counts['Existing Statements Not Overwritten'] += 1
             else:
-                counts['new_stmnts'] += 1
+                counts['New Statements Added'] += 1
 
         # Add processing info to messages
         for k, v in counts.items():

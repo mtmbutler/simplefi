@@ -1,10 +1,13 @@
 import datetime
 import os
 import random
+import re
 import string
 from typing import TYPE_CHECKING
 
+import pandas as pd
 from django.apps import apps
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -15,6 +18,8 @@ from debt.tests.utils import login
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.test import Client
+
+    from debt.models import CreditLine
 
 TEST_NAME = 'Scooby Doo'
 RAND_FILE_NAME_LENGTH = 20
@@ -66,6 +71,174 @@ def temp_file(content=''):
     with open(path, 'w') as f:
         f.write(content)
     return path
+
+
+class TestStatementBulkDownloadView:
+    def test_bulk_download_empty(self, client, django_user_model):
+        url = reverse('debt:statement-download')
+        login(client, django_user_model)
+
+        pattern = 'Account,Date,Balance\r?\n'
+        r = client.get(url)
+        text = ''.join(line.decode('UTF-8')
+                       for line in r.streaming_content)
+        assert re.match(pattern, text)
+
+    def test_bulk_download_with_data(self, client, django_user_model):
+        url = reverse('debt:statement-download')
+        user = login(client, django_user_model)
+
+        # Create a statement
+        cl = mommy.make('debt.CreditLine', user=user,
+                        statement_date=10, name='Checking')
+        mommy.make('debt.Statement', user=user, account=cl,
+                   year=2018, month=11, balance=20)
+
+        pattern = 'Account,Date,Balance\r?\nChecking,2018-11-10,20.00'
+        r = client.get(url)
+        text = ''.join(line.decode('UTF-8')
+                       for line in r.streaming_content)
+        assert re.match(pattern, text)
+
+
+class TestStatementBulkUpdateView:
+    def test_bulk_update_invalid_csv(self, client, django_user_model):
+        url = reverse('debt:statement-bulk-update')
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user,
+                         name='Checking')  # type: CreditLine
+        assert acc.statement_set.count() == 0
+
+        # Create the CSV
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Date=['11/1/18', '12/1/18'],
+            BadColumnName=[2000.00, 3000.00]))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            assert r.status_code == 200
+            assert acc.statement_set.count() == 0
+            assert "columns expected but not found" in hr(r)
+
+        finally:
+            os.remove(temp_path)
+
+    def test_bulk_update_unknown_account(self, client, django_user_model):
+        url = reverse('debt:statement-bulk-update')
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user,
+                         name='Checking')  # type: CreditLine
+        assert acc.statement_set.count() == 0
+
+        # Create the CSV
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Unknown Account'],
+            Date=['11/1/18', '12/1/18'],
+            Balance=[2000.00, 3000.00]))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            msgs = r.cookies['messages'].value
+            assert 'Unknown Accounts: 1' in msgs
+            assert r.status_code == 302
+            assert acc.balance == 2000
+            assert acc.statement_set.count() == 1
+            assert acc.latest_statement_date == datetime.date(2018, 11, 1)
+
+        finally:
+            os.remove(temp_path)
+
+    def test_bulk_update_no_overwrites(self, client, django_user_model):
+        url = reverse('debt:statement-bulk-update')
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user,
+                         name='Checking')  # type: CreditLine
+        mommy.make('debt.Statement', user=user, account=acc,
+                   month=11, year=2018, balance=1500)
+        assert acc.statement_set.count() == 1
+
+        # Create the CSV
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Date=['11/1/18', '12/1/18'],
+            Balance=[2000.00, 3000.00]))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            msgs = r.cookies['messages'].value
+            assert 'Existing Statements Not Overwritten: 1' in msgs
+            assert r.status_code == 302
+            assert acc.balance == 3000
+            assert acc.statement_set.count() == 2
+            assert 4500 == acc.statement_set.aggregate(
+                models.Sum('balance'))['balance__sum']
+            assert acc.latest_statement_date == datetime.date(2018, 12, 1)
+
+        finally:
+            os.remove(temp_path)
+
+    def test_bulk_update_valid(self, client, django_user_model):
+        url = reverse('debt:statement-bulk-update')
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user,
+                         name='Checking')  # type: CreditLine
+        assert acc.statement_set.count() == 0
+
+        # Create the CSV
+        df = pd.DataFrame(dict(
+            Account=['Checking', 'Checking'],
+            Date=['11/1/18', '12/1/18'],
+            Balance=[2000.00, 3000.00]))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            assert r.status_code == 302
+            assert acc.balance == 3000
+            assert acc.statement_set.count() == 2
+            assert 5000 == acc.statement_set.aggregate(
+                models.Sum('balance'))['balance__sum']
+            assert acc.latest_statement_date == datetime.date(2018, 12, 1)
+
+        finally:
+            os.remove(temp_path)
+
+
+class TestStatementBulkDeleteViews:
+    def test_statement_bulk_delete_confirm_view(self, client, django_user_model):
+        url = reverse('debt:statement-bulk-delete-confirm')
+        template = 'debt/statement-bulk-delete.html'
+        login(client, django_user_model)
+
+        # Check the page
+        response = client.get(url)
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_statement_bulk_delete_view(self, client, django_user_model):
+        url = reverse('debt:statement-bulk-delete')
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user)  # type: CreditLine
+        for i in range(4):
+            mommy.make('debt.Statement', user=user, account=acc, month=i)
+        assert acc.statement_set.count() == 4
+
+        # Check the page
+        response = client.post(url)
+        assert response.status_code == 302
+        assert acc.statement_set.count() == 0
 
 
 class TestOtherViews:
