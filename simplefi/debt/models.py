@@ -119,11 +119,11 @@ class CreditLine(UserDataModel):
         """
         latest_stmnt_date = latest_stmnt_date or self.latest_statement_date
         latest_bal = latest_bal or self.balance
-        before_latest_statement = (
+        before_or_on_latest_statement = (
             year < latest_stmnt_date.year
-            or (month < latest_stmnt_date.month
+            or (month <= latest_stmnt_date.month
                 and year == latest_stmnt_date.year))
-        if before_latest_statement:
+        if before_or_on_latest_statement:
             try:
                 # Hit the database to see if we have the actual value
                 bal = self.statement_set.get(year=year, month=month).balance

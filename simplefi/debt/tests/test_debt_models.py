@@ -159,3 +159,38 @@ class TestMethods:
         stmnt = mommy.make(Statement, account=cl, year=year, month=month)
 
         assert stmnt.date == date(year, month, day)
+
+    def test_calc_balance_stmnt_exists(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user)
+        mommy.make('debt.Statement', user=user, account=acc, month=11,
+                   year=2018, balance=400)
+        assert acc.calc_balance(11, 2018, 400) == (400, None)
+
+    def test_calc_balance_later_stmnts(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user)
+        mommy.make('debt.Statement', user=user, account=acc, month=11,
+                   year=2018, balance=400)
+        assert acc.calc_balance(10, 2018, 400) == (400, None)
+
+    def test_calc_balance_forecast(
+        self,
+        client: 'Client',
+        django_user_model: 'User'
+    ):
+        user = login(client, django_user_model)
+        acc = mommy.make('debt.CreditLine', user=user,
+                         min_pay_dlr=30, interest_rate=12)
+        mommy.make('debt.Statement', user=user, account=acc, month=11,
+                   year=2018, balance=400)
+        expected = 374  # ($400 + 1% monthly interest) - $30
+        assert acc.calc_balance(12, 2018, 400) == (expected, 30)
