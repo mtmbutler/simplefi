@@ -95,9 +95,15 @@ def oys_qs(
 
     # Add budget col and title-ify index if in class mode
     if class_id is None:
-        piv['budget'] = [
-            getattr(Budget.objects.get(class_field__name=c, user=user), 'value', 0)
-            for c in piv.index]
+        budgets = []
+        for c in piv.index:
+            try:
+                obj = Budget.objects.get(class_field__name=c, user=user)
+                budget = obj.value
+            except Budget.DoesNotExist:
+                budget = 0
+            budgets.append(budget)
+        piv['Budget'] = budgets
         piv.index = piv.index.str.title()
     piv = piv.fillna(0).astype(int)
     piv.loc['Total'] = piv.sum()  # Add total row

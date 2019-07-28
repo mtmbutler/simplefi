@@ -301,12 +301,45 @@ class TestBackupViews:
         assert 'Restore failed: No CSV associated' in msgs
 
 
-class TestOtherViews:
-    def test_index(self, client, django_user_model):
+class TestIndexView:
+    def test_index_no_data(self, client, django_user_model):
         url = 'budget:index'
         template = 'budget/index.html'
 
         login(client, django_user_model)
+
+        # Check the page
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_index_with_data(self, client, django_user_model):
+        url = 'budget:index'
+        template = 'budget/index.html'
+
+        user = login(client, django_user_model)
+        cls = mommy.make('budget.TransactionClass', name='Bills')
+        cat = mommy.make('budget.Category', class_field=cls, user=user)
+        ptrn = mommy.make('budget.Pattern', user=user, category=cat)
+        mommy.make('budget.Budget', class_field=cls, user=user)
+        for __ in range(10):
+            mommy.make('budget.Transaction', user=user, pattern=ptrn)
+
+        # Check the page
+        response = client.get(reverse(url))
+        tp_names = [t.name for t in response.templates]
+        assert response.status_code == 200 and template in tp_names
+
+    def test_index_no_budget(self, client, django_user_model):
+        url = 'budget:index'
+        template = 'budget/index.html'
+
+        user = login(client, django_user_model)
+        cls = mommy.make('budget.TransactionClass', name='Bills')
+        cat = mommy.make('budget.Category', class_field=cls, user=user)
+        ptrn = mommy.make('budget.Pattern', user=user, category=cat)
+        for __ in range(10):
+            mommy.make('budget.Transaction', user=user, pattern=ptrn)
 
         # Check the page
         response = client.get(reverse(url))
