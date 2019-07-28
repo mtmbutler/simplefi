@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import shutil
 
 import yaml
 from django.contrib.messages import constants as msg_const
@@ -23,6 +24,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'csvs'), exist_ok=True)
 CONFIG_PATH = os.path.join(REPO_DIR, 'config.yaml')
+if not os.path.isfile(CONFIG_PATH):
+    shutil.copyfile(os.path.join(REPO_DIR, 'config.yaml.template'), CONFIG_PATH)
 
 # Get config
 with open(CONFIG_PATH) as f:
