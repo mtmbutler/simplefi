@@ -17,7 +17,7 @@ from django_tables2 import Column
 from django_tables2.views import SingleTableView
 
 from debt import forms, models, tables
-from debt.utils import debt_summary, get_debt_budget
+from debt.utils import DebtSummaryTable, get_debt_budget
 
 if TYPE_CHECKING:
     from django.db.models import Model
@@ -244,7 +244,10 @@ class DebtSummary(LoginRequiredMixin, SingleTableView):
         return context
 
     def get_queryset(self) -> List[Dict[str, str]]:
-        return debt_summary(self.request)
+        dst = DebtSummaryTable(self.request, do_forecasting=True)
+        for msg in dst.warnings:
+            messages.warning(self.request, msg)
+        return dst.formatted_rows()
 
     def get_table_kwargs(self) -> Dict[str, List[Tuple[str, Column]]]:
         credit_lines = models.CreditLine.objects.filter(

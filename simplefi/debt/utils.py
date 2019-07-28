@@ -1,19 +1,18 @@
 import calendar
-from typing import Dict, List, Union, TYPE_CHECKING
+from decimal import Decimal
+from typing import Any, Dict, List, Union, TYPE_CHECKING
 
-from django.contrib import messages
 from django.http import HttpRequest
 from django.utils import timezone
 
 from budget.models import Budget
-from debt.models import CreditLine, Statement
+from debt.models import CreditLine
 
 if TYPE_CHECKING:
+    from datetime import date, datetime
+
     from django.contrib.auth.models import User
     from django.db.models import QuerySet
-
-
-MAX_ROWS = 120
 
 
 def get_debt_budget(user: 'User') -> Union['Budget', None]:
@@ -24,98 +23,125 @@ def get_debt_budget(user: 'User') -> Union['Budget', None]:
         return None
 
 
-def debt_summary(request: 'HttpRequest') -> List[Dict[str, str]]:
-    """Generates a table showing the path out of debt."""
-    accs = CreditLine.objects.filter(
-        user=request.user, credit_line__gt=0)  # type: QuerySet
+class DebtSummaryTable:
+    MAX_ROWS = 120
 
-    # Get starting point
-    earliest_dates = []
-    for a in accs:
-        d = a.earliest_statement_date
-        if d is not None:
-            earliest_dates.append(d)
-    if not earliest_dates:
-        return []
-    earliest = min(earliest_dates)
-    month = earliest.month
-    year = earliest.year
+    def __init__(self, request: 'HttpRequest', do_forecasting: bool = False):
+        self.accs = CreditLine.objects.filter(
+            user=request.user, credit_line__gt=0)     # type: QuerySet
 
-    # Get today
-    now = timezone.now()
+        # Keep track of any warnings raised
+        self.warnings = []                            # type: List[str]
 
-    # Start loop
-    rows = []
-    count = 0
-    while True:
-        # Check whether we're in the past still
-        before_this_month = (
-            year < now.year
-            or (month < now.month and year == now.year))
+        # Cache latest statement dates, current balances and order
+        self.latest_stmnts = {
+            a.name: a.latest_statement_date
+            for a in self.accs}                       # type: Dict[str, date]
+        self.balances = {
+            a.name: a.balance
+            for a in self.accs}                       # type: Dict[str, Decimal]
+        self.names = [
+            a.name
+            for a in self.accs.order_by('priority')]  # type: List[str]
 
+        # Cache debt budget
+        budget_obj = get_debt_budget(request.user)
+        if budget_obj:
+            self.debt_budget = abs(budget_obj.value)  # type: Decimal
+        else:
+            self.warnings.append("No debt budget specified")
+            self.debt_budget = Decimal(0)             # type: Decimal
+
+        # Get today
+        self.now = timezone.now()                     # type: datetime
+        self.month = self.now.month                   # type: int
+        self.year = self.now.year                     # type: int
+        self.set_starting_month()
+
+        # Start loop
+        self.rows = []                                # type: List[Dict[str, Any]]
+        self.do_forecasting = do_forecasting
+        self.calc_rows()
+
+    def set_starting_month(self):
+        earliest_dates = []
+        for a in self.accs:
+            d = a.earliest_statement_date
+            if d is not None:
+                earliest_dates.append(d)
+        if not earliest_dates:
+            self.warnings.append("No statement data for debt summary table")
+            return
+        earliest = min(earliest_dates)
+        self.month = earliest.month
+        self.year = earliest.year
+
+    def formatted_rows(self) -> List[Dict[str, str]]:
+        fmt_rows = []
+        for row in self.rows:
+            fmt_row = {}
+            for k, v in row.items():
+                try:
+                    # Round float values
+                    fmt_row[k] = format(v, ',.0f')
+                except ValueError:
+                    fmt_row[k] = v
+            fmt_rows.append(fmt_row)
+        return fmt_rows
+
+    def increment(self):
+        if self.month == 12:
+            self.month = 1
+            self.year += 1
+        else:
+            self.month += 1
+
+    def break_loop(self) -> bool:
+        if self.do_forecasting:
+            if not self.rows:
+                return False
+            return self.rows[-1]['Total'] == 0 or len(self.rows) >= self.MAX_ROWS
+        return self.after_this_month()
+
+    def after_this_month(self) -> bool:
+        return (
+            self.year > self.now.year
+            or (self.month > self.now.month and self.year == self.now.year))
+
+    def calc_rows(self):
+        while not self.break_loop():
+            self.calc_next_row()
+            self.increment()
+
+    def calc_next_row(self):
         row = {}        # Create the row
         min_pay = {}    # Keep track of minimum payments
-        for a in accs:  # type: CreditLine
-            try:
-                # See if we have the actual statement value
-                row[a.name] = a.statement_set.get(
-                    year=year, month=month).balance
-            except Statement.DoesNotExist:
-                # If it's before this month and there's a more recent
-                # statement, use the most recent statement value
-                latest = a.latest_statement_date
-                before_latest_statement = (
-                    year < latest.year
-                    or (month < latest.month and year == latest.year))
-                if before_this_month and before_latest_statement:
-                    row[a.name] = a.balance
-                else:
-                    # Forecast the value instead
-                    prev_bal = rows[-1][a.name] if rows else a.balance
-                    row[a.name] = a.forecast_next(bal=prev_bal)
-                    min_pay[a.name] = a.min_pay(bal=prev_bal)
+        for a in self.accs:  # type: CreditLine
+            prev_bal = self.rows[-1][a.name] if self.rows else self.balances[a.name]
+            bal, min_pay_amt = a.calc_balance(
+                self.month, self.year, prev_bal,
+                latest_stmnt_date=self.latest_stmnts[a.name],
+                latest_bal=self.balances[a.name])
+            row[a.name] = bal
+            if min_pay_amt is not None:
+                min_pay[a.name] = min_pay_amt
 
         # Spend the debt budget
-        if not before_this_month:
-            budget_obj = get_debt_budget(request.user)
-            if budget_obj is None:
-                messages.warning(request, "No debt budget specified.")
-            elif len(min_pay) == accs.count():
-                budget = abs(budget_obj.value)
-                budget -= sum(min_pay.values())
-                if budget > 0:
-                    for a in accs.order_by('priority'):
-                        if row[a.name] >= budget:
-                            row[a.name] -= budget
-                            break
-                        else:
-                            budget -= row[a.name]
-                            row[a.name] = 0
+        if self.after_this_month() and len(min_pay) == len(self.names):
+            budget = self.debt_budget
+            budget -= sum(min_pay.values())
+            if budget > 0:
+                for name in self.names:
+                    if row[name] >= budget:
+                        row[name] -= budget
+                        break
+                    else:
+                        budget -= row[name]
+                        row[name] = 0
 
         # Add total column
         row.update(Total=sum(row.values()))
 
         # Add month columns, then append to the table
-        row.update(month=str(calendar.month_abbr[month]) + " " + str(year))
-        rows.append(row)
-
-        # Exit condition
-        if row['Total'] == 0 or count >= MAX_ROWS:
-            # Round float values
-            for row in rows:
-                for k, v in row.items():
-                    try:
-                        row[k] = format(v, ',.0f')
-                    except ValueError:
-                        pass
-            break
-
-        # Increment
-        if month == 12:
-            month = 1
-            year += 1
-        else:
-            month += 1
-        count += 1
-
-    return rows
+        row.update(month=str(calendar.month_abbr[self.month]) + " " + str(self.year))
+        self.rows.append(row)

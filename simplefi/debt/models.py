@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from typing import Union, TYPE_CHECKING
+from typing import Tuple, Union, TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models
@@ -83,6 +83,61 @@ class CreditLine(UserDataModel):
             bal = self.balance
         return max(bal * (1 + self.interest_rate / 100 / 12)
                    - self.min_pay(bal=bal), Decimal(0))
+
+    def calc_balance(
+        self,
+        month: int,
+        year: int,
+        prev_mo_bal: 'Decimal',
+        latest_stmnt_date: 'date' = None,
+        latest_bal: 'Decimal' = None
+    ) -> Tuple['Decimal', Union['Decimal', None]]:
+        """Calculates balance for an arbitrary month.
+
+        Returns a tuple of balance, and minimum pay amount. There are
+        three possibilities:
+
+         1. There is a statement for the given month. In this case, that
+            balance is returned and min pay is None.
+         2. There is not a statement for the given month, but there are
+            more recent statements. This means that the statement is
+            simply missing. In this case, just assign the most recent
+            balance. It will look a bit odd, but less odd than just
+            making it 0, and it won't affect any of the forecasting. Min
+            pay is also None in this case.
+         3. The month/year comes after the most recent statement. It
+            might be in the past or future, but in either case, we'll
+            forecast the value assuming we're paying the minimum amount,
+            and then take interest into account.
+
+        Latest statement date is included as an optional keyword
+        argument because you may want to call this function multiple
+        times, so it essentially allows you to cache the property
+        :func:`latest_statement_date`.
+
+        Latest balance is for caching :func:`balance` in the same way.
+        """
+        latest_stmnt_date = latest_stmnt_date or self.latest_statement_date
+        latest_bal = latest_bal or self.balance
+        before_latest_statement = (
+            year < latest_stmnt_date.year
+            or (month < latest_stmnt_date.month
+                and year == latest_stmnt_date.year))
+        if before_latest_statement:
+            try:
+                # Hit the database to see if we have the actual value
+                bal = self.statement_set.get(year=year, month=month).balance
+                return bal, None
+            except Statement.DoesNotExist:
+                # If it's before this month and there's a more recent
+                # statement, use the most recent statement value
+                return latest_bal, None
+
+        # Forecast the value instead
+        bal = self.forecast_next(bal=prev_mo_bal)
+        min_pay = self.min_pay(bal=prev_mo_bal)
+
+        return bal, min_pay
 
 
 class Statement(UserDataModel):
