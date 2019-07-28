@@ -506,14 +506,16 @@ class TestCreateViews:
         content = ','.join(
             [acc.date_col_name, acc.amt_col_name, acc.desc_col_name])
         csv = temp_file(content=content)
+        try:
+            obj_params = dict(
+                upload_time=today_str(), account=acc.id, csv=csv)
 
-        obj_params = dict(
-            upload_time=today_str(), account=acc.id, csv=csv)
+            self.create_view_test(
+                client, model, url, template, user,
+                obj_params=obj_params, file_field='csv')
 
-        self.create_view_test(
-            client, model, url, template, user,
-            obj_params=obj_params, file_field='csv')
-        os.remove(csv)
+        finally:
+            os.remove(csv)
 
     def test_failed_upload_create_view(
         self,
@@ -531,14 +533,17 @@ class TestCreateViews:
         assert ul_model.objects.count() == 0
         csv = temp_file()  # Not a valid backup CSV
 
-        # Try to create the upload object
-        with open(csv) as f:
-            r = client.post(reverse(url), data=dict(account=acc.id, csv=f))
-        print(r.__dict__)
-        msgs = r.cookies['messages'].value
-        assert r.status_code == 302
-        assert 'Upload failed:' in msgs
-        assert ul_model.objects.count() == 0
+        try:
+            # Try to create the upload object
+            with open(csv) as f:
+                r = client.post(reverse(url), data=dict(account=acc.id, csv=f))
+            print(r.__dict__)
+            msgs = r.cookies['messages'].value
+            assert r.status_code == 302
+            assert 'Upload failed:' in msgs
+            assert ul_model.objects.count() == 0
+        finally:
+            os.remove(csv)
 
     def test_backup_create_view(self, client, django_user_model):
         url = 'budget:backup-add'
@@ -552,12 +557,14 @@ class TestCreateViews:
              'Date', 'Amount', 'Description'])
         csv = temp_file(content=content)
 
-        obj_params = dict(creation_time=today_str(), csv=csv)
+        try:
+            obj_params = dict(creation_time=today_str(), csv=csv)
 
-        self.create_view_test(
-            client, model, url, template, user,
-            obj_params=obj_params, file_field='csv')
-        os.remove(csv)
+            self.create_view_test(
+                client, model, url, template, user,
+                obj_params=obj_params, file_field='csv')
+        finally:
+            os.remove(csv)
 
 
 class TestUpdateViews:
