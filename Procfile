@@ -1,1 +1,1 @@
-simplefi: gunicorn simplefi.wsgi --log-file -
+web: gunicorn simplefi.wsgi --log-file -
