@@ -13,6 +13,7 @@ install:
 
 # Run the unit test
 script:
+  - python simplefi/manage.py collectstatic
   - coverage run -m pytest simplefi/
 
 # Push the results back to codecov

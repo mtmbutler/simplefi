@@ -1,6 +1,7 @@
 # Custom
 .idea/*
 config.yaml
+simplefi/staticfiles/*
 simplefi/media/*
 simplefi/fixtures/*
 simplefi/coverage_html_report/*
