@@ -19,13 +19,12 @@ from django.urls import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO_DIR = os.path.dirname(BASE_DIR)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'csvs'), exist_ok=True)
-CONFIG_PATH = os.path.join(REPO_DIR, 'config.yaml')
+CONFIG_PATH = os.path.join(BASE_DIR, 'config.yaml')
 if not os.path.isfile(CONFIG_PATH):
-    shutil.copyfile(os.path.join(REPO_DIR, 'config.yaml.template'), CONFIG_PATH)
+    shutil.copyfile(os.path.join(BASE_DIR, 'config.yaml.template'), CONFIG_PATH)
 
 # Get config
 with open(CONFIG_PATH) as f:

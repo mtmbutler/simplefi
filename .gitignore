@@ -1,10 +1,10 @@
 # Custom
 .idea/*
 config.yaml
-simplefi/staticfiles/*
-simplefi/media/*
-simplefi/fixtures/*
-simplefi/coverage_html_report/*
+staticfiles/*
+media/*
+fixtures/*
+coverage_html_report/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
