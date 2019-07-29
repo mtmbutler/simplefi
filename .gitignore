@@ -1,6 +1,5 @@
 # Custom
 .idea/*
-config.yaml
 staticfiles/*
 media/*
 fixtures/*
