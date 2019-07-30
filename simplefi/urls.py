@@ -23,6 +23,7 @@ from . import settings
 urlpatterns = [
     path('', RedirectView.as_view(url='budget/', permanent=False),
          name='index'),
+    path('auth/', include('django_registration.backends.activation.urls')),
     path('auth/', include('django.contrib.auth.urls')),
     path('budget/', include('budget.urls')),
     path('debt/', include('debt.urls')),

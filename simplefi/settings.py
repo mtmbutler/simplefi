@@ -11,6 +11,7 @@ SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 DEBUG = bool(os.environ.get('DJANGO_DEBUG', False))
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS', 'localhost|127.0.0.1|0.0.0.0').split('|')
+REGISTRATION_OPEN = bool(os.environ.get('DJANGO_DEBUG', True))
 
 # Application definition
 LOGIN_URL = reverse_lazy('login')
@@ -25,6 +26,8 @@ INSTALLED_APPS = [
     'django_tables2',
     'django_filters',
     'bootstrap3',
+    'crispy_forms',
+    'django_registration',
 
     # Built-in
     'django.contrib.admin',
@@ -112,6 +115,9 @@ os.makedirs(os.path.join(MEDIA_ROOT, 'csvs'), exist_ok=True)
 # Debugging settings
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Registration
+ACCOUNT_ACTIVATION_DAYS = 7
 
 # Map message tags to bootstrap alerts
 MESSAGE_TAGS = {

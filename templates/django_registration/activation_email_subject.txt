@@ -1,0 +1,1 @@
+Activate your SimpleFi account - {{ activation_key }}
