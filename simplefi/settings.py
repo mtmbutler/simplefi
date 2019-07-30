@@ -18,6 +18,14 @@ LOGIN_URL = reverse_lazy('login')
 LOGIN_REDIRECT_URL = reverse_lazy('index')
 
 INSTALLED_APPS = [
+    # Built-in
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
     # First party
     'debt.apps.DebtConfig',
     'budget.apps.BudgetConfig',
@@ -28,14 +36,6 @@ INSTALLED_APPS = [
     'bootstrap3',
     'crispy_forms',
     'django_registration',
-
-    # Built-in
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
