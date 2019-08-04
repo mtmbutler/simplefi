@@ -8,7 +8,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Read config from the environment
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
-DEBUG = bool(os.environ.get('DJANGO_DEBUG', False))
+DEBUG = os.environ.get('DJANGO_DEBUG', '').lower() == 'true'
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS', 'localhost|127.0.0.1|0.0.0.0').split('|')
 REGISTRATION_OPEN = bool(os.environ.get('DJANGO_DEBUG', True))
@@ -112,9 +112,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'csvs'), exist_ok=True)
 
-# Debugging settings
+# Email
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_USE_TLS = True
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+    EMAIL_PORT = 587
 
 # Registration
 ACCOUNT_ACTIVATION_DAYS = 7
