@@ -13,9 +13,7 @@ install:
 
 # Define environment variables
 env:
-  - DJANGO_SECRET_KEY=verysecretkey
-  - EMAIL_HOST_USER=nobody@gmail.com
-  - EMAIL_HOST_PASSWORD=verysecurepassword
+  - DJANGO_SECRET_KEY=verysecretkey EMAIL_HOST_USER=nobody@gmail.com EMAIL_HOST_PASSWORD=verysecurepassword
 
 # Run the unit test
 script:
