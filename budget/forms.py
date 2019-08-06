@@ -21,3 +21,7 @@ class PatternForm(forms.ModelForm):
         field_classes = {
             'category': CategoryClassChoiceField,
         }
+
+
+class PatternBulkUpdateForm(forms.Form):
+    csv = forms.FileField()

@@ -2,6 +2,7 @@ import datetime
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 
+import pandas as pd
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
@@ -10,7 +11,7 @@ from django.http import HttpResponseRedirect, FileResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import TemplateView, DetailView, RedirectView
+from django.views.generic import FormView, DetailView, RedirectView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView, FilterMixin
@@ -475,6 +476,76 @@ class PatternDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     model = models.Pattern
     success_url = reverse_lazy('budget:pattern-list')
     template_name = 'budget/pattern-delete.html'
+
+
+class PatternBulkUpdate(LoginRequiredMixin, FormView):
+    form_class = forms.PatternBulkUpdateForm
+    success_url = reverse_lazy('budget:pattern-list')
+    template_name = 'budget/pattern-bulk-update.html'
+
+    def form_valid(
+        self,
+        form: 'forms.PatternBulkUpdateForm'
+    ) -> 'HttpResponseRedirect':
+        # Read the CSV into a DataFrame
+        path = self.request.FILES['csv']
+        try:
+            df = pd.read_csv(path, usecols=['Pattern', 'Category', 'Class'],
+                             dtype=str)
+        except ValueError as e:
+            messages.error(self.request, f"Restore failed: {e}")
+            return self.form_invalid(form)
+
+        # Keep track of some things for transparency
+        counts = {
+            'Unknown Transaction Classes': 0,
+            'New Categories Added': 0,
+            'Existing Patterns Not Overwritten': 0,
+            'New Patterns Added': 0
+        }
+
+        # Validate the classes, raising warnings as needed
+        cls_objs = {}  # type: Dict[str, models.TransactionClass]
+        for cls in df.Class.unique():
+            try:
+                cls_objs[cls] = models.TransactionClass.objects.get(name=cls.lower())
+            except models.TransactionClass.DoesNotExist:
+                counts['Unknown Transaction Classes'] += 1
+                messages.warning(self.request,
+                                 f"Unknown transaction class: {cls}")
+
+        # Create the categories as needed
+        cat_objs = {}  # type: Dict[str, models.Category]
+        gb = df.groupby(['Class', 'Category']).count().reset_index()
+        for __, row in gb.iterrows():
+            if row.Class not in cls_objs:
+                continue
+            cat_objs[row.Category], created = models.Category.objects.get_or_create(
+                user=self.request.user, name=row.Category,
+                class_field=cls_objs[row.Class])
+            if created:
+                counts['New Categories Added'] += 1
+
+        # Iterate through the data
+        for __, row in df.iterrows():
+            if row.Category not in cat_objs:
+                continue
+            pattern, created = models.Pattern.objects.get_or_create(
+                user=self.request.user, pattern=row.Pattern,
+                defaults={'category': cat_objs[row.Category]}
+            )
+            if created:
+                counts['New Patterns Added'] += 1
+            else:
+                counts['Existing Patterns Not Overwritten'] += 1
+
+        # Add processing info to messages
+        for k, v in counts.items():
+            if not v:
+                continue
+            messages.info(self.request, f"{k}: {v}")
+
+        return super().form_valid(form)
 
 
 # -- TRANSACTIONS --

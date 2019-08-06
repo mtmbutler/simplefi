@@ -48,6 +48,7 @@ urlpatterns = [
     path('patterns/<int:pk>/delete/', views.PatternDelete.as_view(), name='pattern-delete'),
     path('patterns/classify/', views.PatternClassify.as_view(), name='classify'),
     path('patterns/declassify/', views.PatternDeclassify.as_view(), name='declassify'),
+    path('patterns/upload/', views.PatternBulkUpdate.as_view(), name='pattern-bulk-update'),
     
     # Transactions
     path('transactions/', views.TransactionList.as_view(), name='transaction-list'),

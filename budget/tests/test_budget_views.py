@@ -134,6 +134,61 @@ class TestPatternClassificationViews:
         assert pat.num_transactions == 0
 
 
+class TestPatternBulkUpdateView:
+    def test_bulk_update_invalid_csv(self, client, django_user_model):
+        url = reverse('budget:pattern-bulk-update')
+        login(client, django_user_model)
+        pattern_model = apps.get_model('budget.Pattern')
+        assert pattern_model.objects.count() == 0
+
+        # Create the CSV
+        df = pd.DataFrame(dict(
+            Pattern=['.*state.*farm.*', '.*target.*'],
+            Category=['Insurance', 'Shopping'],
+            BadColumnName=['Bills', 'Discretionary']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            assert r.status_code == 200
+            assert pattern_model.objects.count() == 0
+            assert "columns expected but not found" in hr(r)
+
+        finally:
+            os.remove(temp_path)
+
+    def test_bulk_update_valid(self, client, django_user_model):
+        url = reverse('budget:pattern-bulk-update')
+        login(client, django_user_model)
+        cat_model = apps.get_model('budget.Category')
+        pattern_model = apps.get_model('budget.Pattern')
+        assert pattern_model.objects.count() == 0
+
+        # Create the transaction class objects
+        mommy.make('budget.TransactionClass', name='bills')
+        mommy.make('budget.TransactionClass', name='discretionary')
+
+        # Create the CSV
+        df = pd.DataFrame(dict(
+            Pattern=['.*state.*farm.*', '.*target.*'],
+            Category=['Insurance', 'Shopping'],
+            Class=['Bills', 'Discretionary']))
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            assert r.status_code == 302
+            assert cat_model.objects.count() == 2
+            assert pattern_model.objects.count() == 2
+
+        finally:
+            os.remove(temp_path)
+
+
 class TestBackupViews:
     def test_backup_create_new_view(
         self,
