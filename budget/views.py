@@ -1,6 +1,6 @@
 import datetime
 from abc import abstractmethod
-from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Tuple, Union, TYPE_CHECKING
 
 import pandas as pd
 from django.contrib import messages
@@ -15,7 +15,7 @@ from django.views.generic import FormView, DetailView, RedirectView, TemplateVie
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django_filters.views import FilterView, FilterMixin
-from django_tables2 import Column
+from django_tables2 import Column, Table
 from django_tables2.views import SingleTableMixin, SingleTableView
 
 from budget import forms, models, tables
@@ -316,7 +316,23 @@ class ClassView(LoginRequiredMixin, DetailView, SingleTableMixin):
     model = models.TransactionClass
     template_name = 'budget/class-detail.html'
 
-    table_class = tables.ClassSummaryTable
+    table_class = Table
+
+    def get_category_linkify_func(
+        self, class_id: int
+    ) -> Callable[[Dict[str, Any]], Union[str, None]]:
+        user = self.request.user
+
+        def linkify(record: Dict[str, Any]) -> Union[str, None]:
+            try:
+                cat = models.Category.objects.get(
+                    user=user, class_field_id=class_id,
+                    name=record['category'])
+                return cat.get_absolute_url()
+            except models.Category.DoesNotExist:
+                return None
+
+        return linkify
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -334,8 +350,11 @@ class ClassView(LoginRequiredMixin, DetailView, SingleTableMixin):
             cols.append(cur.strftime(fmt))
             cur = first_day_month_after(cur)
 
+        linkify_func = self.get_category_linkify_func(self.object.id)
         extra_cols = [
-            (c, Column(attrs={'td': dict(align='right')})) for c in cols]
+            ('category', Column(accessor='category', linkify=linkify_func))]
+        extra_cols.extend([
+            (c, Column(attrs={'td': dict(align='right')})) for c in cols])
         qs = oys_qs(user=self.request.user,
                     class_id=self.object.id)
         t = self.table_class(

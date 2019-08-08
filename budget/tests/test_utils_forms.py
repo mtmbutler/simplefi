@@ -57,26 +57,3 @@ class TestTableLinkifies:
 
         # Should link to the list view; since there is no 'foo' in the DB
         assert url == reverse('budget:index')
-
-    def test_linkify_category_valid(
-        self,
-        client: 'Client',
-        django_user_model: 'User'
-    ):
-        login(client, django_user_model)
-        cat = mommy.make('budget.Category', name='foo')
-        url = tables.linkify_category_by_name('foo')
-
-        # Should link to a detail view for the existing class
-        assert url == reverse('budget:category-detail', kwargs={'pk': cat.pk})
-
-    def test_linkify_category_invalid(
-        self,
-        client: 'Client',
-        django_user_model: 'User'
-    ):
-        login(client, django_user_model)
-        url = tables.linkify_category_by_name('foo')
-
-        # Should link to the list view; since there is no 'foo' in the DB
-        assert url == reverse('budget:index')
