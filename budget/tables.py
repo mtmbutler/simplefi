@@ -228,4 +228,4 @@ class SummaryTable(tables.Table):
         accessor='class_',
         linkify=lambda record: linkify_class_by_name(record["class_"].lower()))
     budget = tables.Column(
-        accessor='budget', attrs={'td': dict(align='right')})
+        accessor='Budget', attrs={'td': dict(align='right')})
