@@ -234,8 +234,7 @@ def linkify_category_by_name(name: str) -> str:
 class SummaryTable(tables.Table):
     class_ = tables.Column(
         accessor='class_',
-        linkify=lambda record: linkify_class_by_name(
-            record["class_"].lower()))
+        linkify=lambda record: linkify_class_by_name(record["class_"].lower()))
     budget = tables.Column(
         accessor='budget', attrs={'td': dict(align='right')})
 

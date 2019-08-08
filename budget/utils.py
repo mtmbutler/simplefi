@@ -111,6 +111,7 @@ def oys_qs(
     # Rename and convert back to list of dicts
     piv.index.name = piv_ix_name
     piv.columns = [safe_strftime(c, '%b_%y') for c in piv.columns]
+    piv.index = piv.index.fillna('Unclassified')
     new_qs = piv.reset_index().to_dict('records')
 
     return new_qs
