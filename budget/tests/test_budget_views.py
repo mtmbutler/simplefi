@@ -709,34 +709,60 @@ class TestUpdateViews:
             user_required=True, obj_params=obj_params)
 
     def test_category_update_view(self, client, django_user_model):
-        url = 'budget:category-update'
-        model = 'budget.Category'
+        # Setup
+        url_pattern = 'budget:category-update'
         template = 'budget/category-update.html'
         user = login(client, django_user_model)
 
-        # Parents
-        # parent_models = ['budget.TransactionClass']
-        # parents = parent_obj_set(parent_models)
+        # Create the dependency object
+        cls_model = apps.get_model(
+            'budget.TransactionClass')  # type: Type[models.TransactionClass]
+        cls = mommy.make(cls_model)
 
-        obj_params = dict(
-            name='TestObj', class_field=1)
+        # Create the object
+        model = apps.get_model('budget.Category')  # type: Type[models.Category]
+        assert model.objects.count() == 0
+        cat = mommy.make(model, user=user, name='OrigName', class_field=cls)
+        url = reverse(url_pattern, kwargs={'pk': cat.pk})
 
-        self.update_view_test(
-            client, model, url, template, user,
-            user_required=True, obj_params=obj_params)
+        # Test the update page for template
+        response = client.get(url)
+        assert response.status_code == 200
+        assert template in [t.name for t in response.templates]
+
+        # Test the update page form
+        form_data = dict(name='NewName', class_field=cat.class_field_id)
+        response = client.post(url, data=form_data)
+        assert response.status_code == 302
+        assert model.objects.get(pk=cat.pk).name == 'NewName'
 
     def test_pattern_update_view(self, client, django_user_model):
-        url = 'budget:pattern-update'
-        model = 'budget.Pattern'
+        # Setup
+        url_pattern = 'budget:pattern-update'
         template = 'budget/pattern-update.html'
         user = login(client, django_user_model)
 
-        obj_params = dict(
-            pattern='TestObj', category=1)
+        # Create the dependency object
+        cat_model = apps.get_model(
+            'budget.Category')  # type: Type[models.Category]
+        cat = mommy.make(cat_model)
 
-        self.update_view_test(
-            client, model, url, template, user,
-            user_required=True, obj_params=obj_params)
+        # Create the object
+        model = apps.get_model('budget.Pattern')  # type: Type[models.Pattern]
+        assert model.objects.count() == 0
+        pat = mommy.make(model, user=user, pattern='OrigPattern', category=cat)
+        url = reverse(url_pattern, kwargs={'pk': pat.pk})
+
+        # Test the update page for template
+        response = client.get(url)
+        assert response.status_code == 200
+        assert template in [t.name for t in response.templates]
+
+        # Test the update page form
+        form_data = dict(pattern='NewPattern', category=cat.id)
+        response = client.post(url, data=form_data)
+        assert response.status_code == 302
+        assert model.objects.get(pk=cat.pk).pattern == 'NewPattern'
 
     def test_budget_update_view(self, client, django_user_model):
         url = 'budget:budget-update'

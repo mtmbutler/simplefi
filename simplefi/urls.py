@@ -18,8 +18,6 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic.base import RedirectView
 
-from . import settings
-
 urlpatterns = [
     path('', RedirectView.as_view(url='budget/', permanent=False),
          name='index'),
@@ -29,7 +27,3 @@ urlpatterns = [
     path('debt/', include('debt.urls')),
     path('admin/', admin.site.urls),
 ]
-
-if settings.DEBUG:
-    urlpatterns.extend(
-        static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
