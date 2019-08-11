@@ -1,11 +1,1 @@
 {% extends "base.html" %}
-
-{% block topnav %}
-    <li><a href="{% url 'budget:index' %}">Budget</a></li>
-    <li class="active"><a href="{% url 'debt:index' %}">Debt</a></li>
-{% endblock %}
-
-{% block nav %}
-    <a href="{% url 'debt:index' %}">Summary</a>
-    <a href="{% url 'debt:account-list' %}">Credit Lines</a>
-{% endblock %}

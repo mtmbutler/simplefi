@@ -1,77 +1,76 @@
-.navbar {
-  min-height: 40px;
+/* Navbar container */
+.simplefi-navbar {
+  overflow: hidden;
+  background-color: #00A6A4;
 }
 
-.navbar-brand {
-  padding: 0 15px;
-  height: 40px;
-  line-height: 40px;
+/* Links inside the navbar */
+.simplefi-navbar a {
+  float: left;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
 }
 
-.navbar-toggle {
-  /* (80px - button height 34px) / 2 = 23px */
-  margin-top: 23px;
-  padding: 9px 10px !important;
+/* The dropdown container */
+.simplefi-dropdown {
+  float: left;
+  overflow: hidden;
 }
 
-@media (min-width: 768px) {
-  .navbar-nav > li > a {
-    /* (80px - line-height of 27px) / 2 = 26.5px */
-    padding-top: 26.5px;
-    padding-bottom: 26.5px;
-    line-height: 27px;
-  }
+/* Dropdown button */
+.simplefi-dropdown .simplefi-dropbtn {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  color: white;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit; /* Important for vertical align on mobile phones */
+  margin: 0; /* Important for vertical align on mobile phones */
 }
 
-/* The sidenav */
-.sidenav {
-  width: 140px;
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Stay on top */
-  top: 60px;
-  left: 10px;
-  background-color: #e0e0e0;
-  overflow-x: hidden; /* Disable horizontal scroll */
-  padding-top: 10px;
-  padding-bottom: 10px;
-  transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
-  border-radius: 8px;
+/* Add a red background color to navbar links on hover */
+.simplefi-navbar a:hover, .simplefi-dropdown:hover .simplefi-dropbtn {
+  background-color: #0077B5;
+}
+
+/* Dropdown content (hidden by default) */
+.simplefi-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.simplefi-dropdown-content a {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+/* Add a grey background color to dropdown links on hover */
+.simplefi-dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+/* Show the dropdown menu on hover */
+.simplefi-dropdown:hover .simplefi-dropdown-content {
+  display: block;
 }
 
 /* Page content */
 .main {
   transition: margin-left .5s;
   padding: 20px;
-  margin-top: -40px;
-  margin-left: 150px;
+  margin-top: -20px;
+  margin-left: 0;
 }
-
-/* The navigation menu links */
-.sidenav a {
-  padding: 4px 8px 4px 16px;
-  text-decoration: none;
-  font-size: 16px;
-  color: #818181;
-  display: block;
-  transition: 0.3s;
-}
-
-/* When you mouse over the navigation links, change their color */
-.sidenav a:hover {
-  color: #f1f1f1;
-}
-
-/*!* Position and style the close button (top right corner) *!*/
-/*.sidenav .closebtn {*/
-/*  position: absolute;*/
-/*  top: 0;*/
-/*  right: 25px;*/
-/*  font-size: 36px;*/
-/*  margin-left: 50px;*/
-/*}*/
-
-/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
-/*@media screen and (max-height: 450px) {*/
-/*  .sidenav {padding-top: 15px;}*/
-/*  .sidenav a {font-size: 18px;}*/
-/*}*/

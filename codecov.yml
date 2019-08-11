@@ -4,4 +4,4 @@ ignore:
   - "**/tests"
   - "**/__init__.py"
   - "**/urls.py"
-  - "**/settings.py"
+  - "simplefi/settings/*.py"
