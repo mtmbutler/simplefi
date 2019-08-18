@@ -12,6 +12,7 @@ urlpatterns = [
     path('accounts/<int:pk>/', views.AccountView.as_view(), name='account-detail'),
     path('accounts/<int:pk>/update/', views.AccountUpdate.as_view(), name='account-update'),
     path('accounts/<int:pk>/delete/', views.AccountDelete.as_view(), name='account-delete'),
+    path('accounts/upload/', views.CreditLineBulkUpdate.as_view(), name='creditline-bulk-update'),
 
     # Statements
     path('statements/add/', views.StatementCreate.as_view(), name='statement-add'),

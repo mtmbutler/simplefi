@@ -120,6 +120,60 @@ class AccountDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
     template_name = 'debt/account-delete.html'
 
 
+class CreditLineBulkUpdate(LoginRequiredMixin, generic.FormView):
+    form_class = forms.CreditLineBulkUpdateForm
+    success_url = reverse_lazy('debt:account-list')
+    template_name = 'debt/creditline-bulk-update.html'
+    cols = ['name', 'holder', 'statement_date', 'date_opened', 'annual_fee',
+            'interest_rate', 'credit_line', 'min_pay_pct', 'min_pay_dlr', 'priority']
+
+    def form_valid(
+        self,
+        form: 'forms.StatementBulkUpdateForm'
+    ) -> 'HttpResponseRedirect':
+        # Read the CSV into a DataFrame
+        path = self.request.FILES['csv']
+        try:
+            df = pd.read_csv(path, usecols=self.cols,
+                             infer_datetime_format=True,
+                             parse_dates=['statement_date'])
+        except ValueError as e:
+            messages.error(self.request, f"Restore failed: {e}")
+            return self.form_invalid(form)
+
+        # Iterate through the data
+        counts = {
+            'Existing Accounts Not Overwritten': 0,
+            'New Accounts Added': 0
+        }
+        for __, row in df.iterrows():
+            acc, created = models.CreditLine.objects.get_or_create(
+                user=self.request.user, name=row['name'],
+                defaults=dict(
+                    holder=row.holder,
+                    statement_date=row.statement_date,
+                    date_opened=row.date_opened,
+                    annual_fee=row.annual_fee,
+                    interest_rate=row.interest_rate,
+                    credit_line=row.credit_line,
+                    min_pay_pct=row.min_pay_pct,
+                    min_pay_dlr=row.min_pay_dlr,
+                    priority=row.priority)
+            )
+            if not created:
+                counts['Existing Accounts Not Overwritten'] += 1
+            else:
+                counts['New Accounts Added'] += 1
+
+        # Add processing info to messages
+        for k, v in counts.items():
+            if not v:
+                continue
+            messages.info(self.request, f"{k}: {v}")
+
+        return super().form_valid(form)
+
+
 # -- STATEMENTS --
 class StatementCreate(LoginRequiredMixin, AuthCreateFormMixin,
                       AuthForeignKeyMixin, CreateView):

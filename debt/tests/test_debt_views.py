@@ -511,3 +511,113 @@ class TestDeleteViews:
         model = 'debt.Statement'
         url = 'debt:statement-delete'
         self.delete_view_test(client, django_user_model, model, url)
+
+
+class TestCreditLineBulkUpdateView:
+    def test_bulk_update_valid(self, client, django_user_model):
+        url = reverse('debt:creditline-bulk-update')
+        user = login(client, django_user_model)
+        model = apps.get_model('debt.CreditLine')
+        assert model.objects.count() == 0
+
+        # Create the CSV
+        df = pd.DataFrame({k: [v] for k, v in dict(
+            name='CreditCard',
+            holder='Scooby Doo',
+            statement_date=9,
+            date_opened='2018-11-10',
+            annual_fee=100,
+            interest_rate=22,
+            credit_line=10000,
+            min_pay_pct=3,
+            min_pay_dlr=30,
+            priority=0
+        ).items()})
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            assert r.status_code == 302
+            assert model.objects.count() == 1
+
+            # Spot check some fields
+            cl = model.objects.first()  # type: CreditLine
+            assert cl.user == user
+            assert cl.annual_fee == 100
+            assert cl.min_pay_dlr == 30
+        finally:
+            os.remove(temp_path)
+
+    def test_bulk_update_invalid_csv(self, client, django_user_model):
+        url = reverse('debt:creditline-bulk-update')
+        login(client, django_user_model)
+        model = apps.get_model('debt.CreditLine')
+        assert model.objects.count() == 0
+
+        # Create the CSV
+        df = pd.DataFrame({k: [v] for k, v in dict(
+            bad_column_name='CreditCard',
+            holder='Scooby Doo',
+            statement_date=9,
+            date_opened='2018-11-10',
+            annual_fee=100,
+            interest_rate=22,
+            credit_line=10000,
+            min_pay_pct=3,
+            min_pay_dlr=30,
+            priority=0
+        ).items()})
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            assert r.status_code == 200
+            assert model.objects.count() == 0
+            assert "columns expected but not found" in hr(r)
+        finally:
+            os.remove(temp_path)
+
+    def test_bulk_update_no_overwrites(self, client, django_user_model):
+        url = reverse('debt:creditline-bulk-update')
+        user = login(client, django_user_model)
+        model = apps.get_model('debt.CreditLine')
+        assert model.objects.count() == 0
+
+        # Create an existing account
+        existing_acc = mommy.make(model, name='CreditCard', user=user, annual_fee=200)
+        assert model.objects.count() == 1
+
+        # Create the CSV
+        df = pd.DataFrame({k: [v] for k, v in dict(
+            name='CreditCard',
+            holder='Scooby Doo',
+            statement_date=9,
+            date_opened='2018-11-10',
+            annual_fee=100,
+            interest_rate=22,
+            credit_line=10000,
+            min_pay_pct=3,
+            min_pay_dlr=30,
+            priority=0
+        ).items()})
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp.csv')
+        df.to_csv(temp_path)
+
+        try:
+            with open(temp_path, 'rb') as f:
+                r = client.post(url, {'csv': f})
+            msgs = r.cookies['messages'].value
+            assert 'Existing Accounts Not Overwritten: 1' in msgs
+            assert r.status_code == 302
+            assert model.objects.count() == 1
+
+            # Spot check some fields
+            cl = model.objects.first()  # type: CreditLine
+            assert cl.user == user
+            assert cl.annual_fee == 200
+        finally:
+            os.remove(temp_path)
