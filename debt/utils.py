@@ -15,10 +15,10 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 
-def get_debt_budget(user: 'User') -> Union['Budget', None]:
+def get_debt_budget(user: "User") -> Union["Budget", None]:
     """Gets the specified budget for debt, or None if not specified."""
     try:
-        return Budget.objects.get(user=user, class_field__name='debt')
+        return Budget.objects.get(user=user, class_field__name="debt")
     except Budget.DoesNotExist:
         return None
 
@@ -26,23 +26,22 @@ def get_debt_budget(user: 'User') -> Union['Budget', None]:
 class DebtSummaryTable:
     MAX_ROWS = 120
 
-    def __init__(self, request: 'HttpRequest', do_forecasting: bool = False):
+    def __init__(self, request: "HttpRequest", do_forecasting: bool = False):
         self.accs = CreditLine.objects.filter(
-            user=request.user, credit_line__gt=0)     # type: QuerySet
+            user=request.user, credit_line__gt=0
+        )  # type: QuerySet
 
         # Keep track of any warnings raised
-        self.warnings = []                            # type: List[str]
+        self.warnings = []  # type: List[str]
 
         # Cache latest statement dates, current balances and order
         self.latest_stmnts = {
-            a.name: a.latest_statement_date
-            for a in self.accs}                       # type: Dict[str, date]
+            a.name: a.latest_statement_date for a in self.accs
+        }  # type: Dict[str, date]
         self.balances = {
-            a.name: a.balance
-            for a in self.accs}                       # type: Dict[str, Decimal]
-        self.names = [
-            a.name
-            for a in self.accs.order_by('priority')]  # type: List[str]
+            a.name: a.balance for a in self.accs
+        }  # type: Dict[str, Decimal]
+        self.names = [a.name for a in self.accs.order_by("priority")]  # type: List[str]
 
         # Cache debt budget
         budget_obj = get_debt_budget(request.user)
@@ -50,16 +49,16 @@ class DebtSummaryTable:
             self.debt_budget = abs(budget_obj.value)  # type: Decimal
         else:
             self.warnings.append("No debt budget specified")
-            self.debt_budget = Decimal(0)             # type: Decimal
+            self.debt_budget = Decimal(0)  # type: Decimal
 
         # Get today
-        self.now = timezone.now()                     # type: datetime
-        self.month = self.now.month                   # type: int
-        self.year = self.now.year                     # type: int
+        self.now = timezone.now()  # type: datetime
+        self.month = self.now.month  # type: int
+        self.year = self.now.year  # type: int
         self.set_starting_month()
 
         # Start loop
-        self.rows = []                                # type: List[Dict[str, Any]]
+        self.rows = []  # type: List[Dict[str, Any]]
         self.do_forecasting = do_forecasting
         self.calc_rows()
 
@@ -83,7 +82,7 @@ class DebtSummaryTable:
             for k, v in row.items():
                 try:
                     # Round float values
-                    fmt_row[k] = format(v, ',.0f')
+                    fmt_row[k] = format(v, ",.0f")
                 except ValueError:
                     fmt_row[k] = v
             fmt_rows.append(fmt_row)
@@ -100,13 +99,13 @@ class DebtSummaryTable:
         if self.do_forecasting:
             if not self.rows:
                 return False
-            return self.rows[-1]['Total'] == 0 or len(self.rows) >= self.MAX_ROWS
+            return self.rows[-1]["Total"] == 0 or len(self.rows) >= self.MAX_ROWS
         return self.after_this_month()
 
     def after_this_month(self) -> bool:
-        return (
-            self.year > self.now.year
-            or (self.month > self.now.month and self.year == self.now.year))
+        return self.year > self.now.year or (
+            self.month > self.now.month and self.year == self.now.year
+        )
 
     def calc_rows(self):
         while not self.break_loop():
@@ -114,14 +113,17 @@ class DebtSummaryTable:
             self.increment()
 
     def calc_next_row(self):
-        row = {}        # Create the row
-        min_pay = {}    # Keep track of minimum payments
+        row = {}  # Create the row
+        min_pay = {}  # Keep track of minimum payments
         for a in self.accs:  # type: CreditLine
             prev_bal = self.rows[-1][a.name] if self.rows else self.balances[a.name]
             bal, min_pay_amt = a.calc_balance(
-                self.month, self.year, prev_bal,
+                self.month,
+                self.year,
+                prev_bal,
                 latest_stmnt_date=self.latest_stmnts[a.name],
-                latest_bal=self.balances[a.name])
+                latest_bal=self.balances[a.name],
+            )
             row[a.name] = bal
             if min_pay_amt is not None:
                 min_pay[a.name] = min_pay_amt

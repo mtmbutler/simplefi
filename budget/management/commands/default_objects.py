@@ -10,8 +10,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for c in TransactionClass.CLASSES:
             # Make sure each option exists
-            tc, new = TransactionClass.objects.get_or_create(
-                name=c[0])
+            tc, new = TransactionClass.objects.get_or_create(name=c[0])
             if new:
                 tc.save()
 
@@ -19,7 +18,8 @@ class Command(BaseCommand):
             User = get_user_model()
             for u in User.objects.all():
                 b, new = Budget.objects.get_or_create(
-                    user=u, class_field=tc, defaults={'value': 0.})
+                    user=u, class_field=tc, defaults={"value": 0.0}
+                )
                 if new:
                     b.save()
 

@@ -11,27 +11,29 @@ def replace_keep_case(word: str, replacement: str, text: str) -> str:
     Returns `text` with all instances of `word` replaced by
     `replacement`, maintaining the original case.
     """
+
     def func(match):
         g = match.group()
-        if g.islower(): return replacement.lower()
-        if g.istitle(): return replacement.title()
-        if g.isupper(): return replacement.upper()
+        if g.islower():
+            return replacement.lower()
+        if g.istitle():
+            return replacement.title()
+        if g.isupper():
+            return replacement.upper()
         return replacement
+
     return re.sub(word, func, text, flags=re.I)
 
 
-if __name__ == '__main__':
-    dir_ = os.path.join(
-        os.getcwd(),
-        'budget/templates/budget'
-    )
+if __name__ == "__main__":
+    dir_ = os.path.join(os.getcwd(), "budget/templates/budget")
 
     ##########################
-    to_be_replaced = 'account'
-    new = 'statement'
+    to_be_replaced = "account"
+    new = "statement"
     ##########################
 
-    files = glob.glob(f'{dir_}/{to_be_replaced}-*')
+    files = glob.glob(f"{dir_}/{to_be_replaced}-*")
 
     for path in files:
         # Read original file
@@ -43,5 +45,5 @@ if __name__ == '__main__':
 
         # Write new file
         new_path = path.replace(to_be_replaced, new)
-        with open(new_path, 'w+') as f:
+        with open(new_path, "w+") as f:
             f.write(s)

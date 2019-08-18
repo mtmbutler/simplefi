@@ -12,86 +12,93 @@ if TYPE_CHECKING:
 
 
 class UserDataModel(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
 
 
 class CreditLine(UserDataModel):
-    name = models.CharField('Name', max_length=255)
-    holder = models.CharField('Holder', max_length=255)
+    name = models.CharField("Name", max_length=255)
+    holder = models.CharField("Holder", max_length=255)
     statement_date = models.PositiveSmallIntegerField(
-        'Statement Date', default=1,
-        help_text="The numbered day of each month that your statement posts."
+        "Statement Date",
+        default=1,
+        help_text="The numbered day of each month that your statement posts.",
     )
-    date_opened = models.DateField('Date Opened', default=timezone.now)
-    annual_fee = models.DecimalField('Annual Fee ($)', decimal_places=2,
-                                     max_digits=9, default=0.)
-    interest_rate = models.DecimalField('Interest Rate (%)', decimal_places=4,
-                                        max_digits=9, default=0.)
-    credit_line = models.DecimalField('Credit Line', decimal_places=2,
-                                      max_digits=9, default=0.)
-    min_pay_pct = models.DecimalField('Minimum Payment (%)', decimal_places=4,
-                                      max_digits=9, default=0.)
-    min_pay_dlr = models.DecimalField('Minimum Payment ($)', decimal_places=2,
-                                      max_digits=9, default=0.)
-    priority = models.PositiveSmallIntegerField('Priority', default=0)
+    date_opened = models.DateField("Date Opened", default=timezone.now)
+    annual_fee = models.DecimalField(
+        "Annual Fee ($)", decimal_places=2, max_digits=9, default=0.0
+    )
+    interest_rate = models.DecimalField(
+        "Interest Rate (%)", decimal_places=4, max_digits=9, default=0.0
+    )
+    credit_line = models.DecimalField(
+        "Credit Line", decimal_places=2, max_digits=9, default=0.0
+    )
+    min_pay_pct = models.DecimalField(
+        "Minimum Payment (%)", decimal_places=4, max_digits=9, default=0.0
+    )
+    min_pay_dlr = models.DecimalField(
+        "Minimum Payment ($)", decimal_places=2, max_digits=9, default=0.0
+    )
+    priority = models.PositiveSmallIntegerField("Priority", default=0)
 
     class Meta:
-        unique_together = ('user', 'name')
+        unique_together = ("user", "name")
 
     def __str__(self):
         return self.name
 
     @property
-    def balance(self) -> 'Decimal':
+    def balance(self) -> "Decimal":
         if self.statement_set.exists():
-            return self.statement_set.order_by('year', 'month').last().balance
+            return self.statement_set.order_by("year", "month").last().balance
         else:
             return self.credit_line
 
     @property
-    def available_credit(self) -> 'Decimal':
+    def available_credit(self) -> "Decimal":
         return self.credit_line - self.balance
 
     @property
-    def earliest_statement_date(self) -> Union['date', None]:
+    def earliest_statement_date(self) -> Union["date", None]:
         if self.statement_set.exists():
-            return self.statement_set.order_by('year', 'month').first().date
+            return self.statement_set.order_by("year", "month").first().date
         else:
             return None
 
     @property
-    def latest_statement_date(self) -> Union['date', None]:
+    def latest_statement_date(self) -> Union["date", None]:
         if self.statement_set.exists():
-            return self.statement_set.order_by('year', 'month').last().date
+            return self.statement_set.order_by("year", "month").last().date
         else:
             return None
 
     def get_absolute_url(self) -> str:
-        return reverse('debt:account-detail', kwargs={'pk': self.pk})
+        return reverse("debt:account-detail", kwargs={"pk": self.pk})
 
-    def min_pay(self, bal: Union['Decimal', None] = None) -> 'Decimal':
+    def min_pay(self, bal: Union["Decimal", None] = None) -> "Decimal":
         if bal is None:
             bal = self.balance
         return min(max(self.min_pay_dlr, self.min_pay_pct / 100 * bal), bal)
 
-    def forecast_next(self, bal: Union['Decimal', None] = None) -> 'Decimal':
+    def forecast_next(self, bal: Union["Decimal", None] = None) -> "Decimal":
         if bal is None:
             bal = self.balance
-        return max(bal * (1 + self.interest_rate / 100 / 12)
-                   - self.min_pay(bal=bal), Decimal(0))
+        return max(
+            bal * (1 + self.interest_rate / 100 / 12) - self.min_pay(bal=bal),
+            Decimal(0),
+        )
 
     def calc_balance(
         self,
         month: int,
         year: int,
-        prev_mo_bal: 'Decimal',
-        latest_stmnt_date: 'date' = None,
-        latest_bal: 'Decimal' = None
-    ) -> Tuple['Decimal', Union['Decimal', None]]:
+        prev_mo_bal: "Decimal",
+        latest_stmnt_date: "date" = None,
+        latest_bal: "Decimal" = None,
+    ) -> Tuple["Decimal", Union["Decimal", None]]:
         """Calculates balance for an arbitrary month.
 
         Returns a tuple of balance, and minimum pay amount. There are
@@ -119,10 +126,9 @@ class CreditLine(UserDataModel):
         """
         latest_stmnt_date = latest_stmnt_date or self.latest_statement_date
         latest_bal = latest_bal or self.balance
-        before_or_on_latest_statement = (
-            year < latest_stmnt_date.year
-            or (month <= latest_stmnt_date.month
-                and year == latest_stmnt_date.year))
+        before_or_on_latest_statement = year < latest_stmnt_date.year or (
+            month <= latest_stmnt_date.month and year == latest_stmnt_date.year
+        )
         if before_or_on_latest_statement:
             try:
                 # Hit the database to see if we have the actual value
@@ -142,21 +148,22 @@ class CreditLine(UserDataModel):
 
 class Statement(UserDataModel):
     account = models.ForeignKey(CreditLine, on_delete=models.CASCADE, null=True)
-    year = models.PositiveSmallIntegerField('Year', default=0)
-    month = models.PositiveSmallIntegerField('Month', default=0)
-    balance = models.DecimalField('Balance', decimal_places=2, max_digits=9)
+    year = models.PositiveSmallIntegerField("Year", default=0)
+    month = models.PositiveSmallIntegerField("Month", default=0)
+    balance = models.DecimalField("Balance", decimal_places=2, max_digits=9)
 
     class Meta:
-        ordering = ['-year', '-month']
-        unique_together = ('user', 'account', 'year', 'month')
+        ordering = ["-year", "-month"]
+        unique_together = ("user", "account", "year", "month")
 
     def __str__(self):
         return f"{self.date.strftime('%b %Y')}: {self.balance}"
 
     def get_absolute_url(self) -> str:
-        return reverse('debt:statement-update', kwargs={'pk': self.pk})
+        return reverse("debt:statement-update", kwargs={"pk": self.pk})
 
     @property
-    def date(self) -> 'date':
+    def date(self) -> "date":
         return datetime.date(
-            year=self.year, month=self.month, day=self.account.statement_date)
+            year=self.year, month=self.month, day=self.account.statement_date
+        )

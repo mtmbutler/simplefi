@@ -13,24 +13,19 @@ if TYPE_CHECKING:
     from budget.models import Budget, TransactionClass
 
 
-def test_debt_budget_valid(
-    client: 'Client',
-    django_user_model: 'User'
-):
+def test_debt_budget_valid(client: "Client", django_user_model: "User"):
     user = login(client, django_user_model)
     tclass = mommy.make(
-        'budget.TransactionClass', name='debt')  # type: Type[TransactionClass]
+        "budget.TransactionClass", name="debt"
+    )  # type: Type[TransactionClass]
     budget = mommy.make(
-        'budget.Budget', class_field=tclass,
-        user=user, value=100)                    # type: Type[Budget]
+        "budget.Budget", class_field=tclass, user=user, value=100
+    )  # type: Type[Budget]
 
     assert get_debt_budget(user).pk == budget.pk
 
 
-def test_deb_budget_invalid(
-    client: 'Client',
-    django_user_model: 'User'
-):
+def test_deb_budget_invalid(client: "Client", django_user_model: "User"):
     user = login(client, django_user_model)
 
     assert get_debt_budget(user) is None

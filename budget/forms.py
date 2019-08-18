@@ -10,17 +10,16 @@ class UploadFileForm(forms.Form):
 
 class CategoryClassChoiceField(forms.ModelChoiceField):
     """Use this to show class with categories in a drop-down."""
-    def label_from_instance(self, obj: 'Category') -> str:
-        return f'{obj.class_field} - {obj.name}'
+
+    def label_from_instance(self, obj: "Category") -> str:
+        return f"{obj.class_field} - {obj.name}"
 
 
 class PatternForm(forms.ModelForm):
     class Meta:
         model = Pattern
-        fields = ['pattern', 'category']
-        field_classes = {
-            'category': CategoryClassChoiceField,
-        }
+        fields = ["pattern", "category"]
+        field_classes = {"category": CategoryClassChoiceField}
 
 
 class PatternBulkUpdateForm(forms.Form):

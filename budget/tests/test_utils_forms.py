@@ -14,46 +14,34 @@ if TYPE_CHECKING:
 
 def test_safe_strftime_valid():
     dt = datetime.datetime(2018, 11, 10, 15, 30, 0)
-    assert utils.safe_strftime(dt, '%y%m%d %H%M%S') == '181110 153000'
+    assert utils.safe_strftime(dt, "%y%m%d %H%M%S") == "181110 153000"
 
 
 def test_safe_strftime_invalid():
-    assert utils.safe_strftime('non-dt str', '%Y%M%D %h%m%s') == 'non-dt str'
+    assert utils.safe_strftime("non-dt str", "%Y%M%D %h%m%s") == "non-dt str"
 
 
 class TestCategoryClassChoiceField:
-    def test_label_from_instance(
-        self,
-        client: 'Client',
-        django_user_model: 'User'
-    ):
+    def test_label_from_instance(self, client: "Client", django_user_model: "User"):
         login(client, django_user_model)
-        tclass = mommy.make('budget.TransactionClass', name='foo')
-        cat = mommy.make('budget.Category', class_field=tclass, name='bar')
+        tclass = mommy.make("budget.TransactionClass", name="foo")
+        cat = mommy.make("budget.Category", class_field=tclass, name="bar")
         label = forms.CategoryClassChoiceField.label_from_instance(None, cat)
-        assert label == 'foo - bar'
+        assert label == "foo - bar"
 
 
 class TestTableLinkifies:
-    def test_linkify_class_valid(
-        self,
-        client: 'Client',
-        django_user_model: 'User'
-    ):
+    def test_linkify_class_valid(self, client: "Client", django_user_model: "User"):
         login(client, django_user_model)
-        tclass = mommy.make('budget.TransactionClass', name='foo')
-        url = tables.linkify_class_by_name('foo')
+        tclass = mommy.make("budget.TransactionClass", name="foo")
+        url = tables.linkify_class_by_name("foo")
 
         # Should link to a detail view for the existing class
-        assert url == reverse('budget:class-detail', kwargs={'pk': tclass.pk})
+        assert url == reverse("budget:class-detail", kwargs={"pk": tclass.pk})
 
-    def test_linkify_class_invalid(
-        self,
-        client: 'Client',
-        django_user_model: 'User'
-    ):
+    def test_linkify_class_invalid(self, client: "Client", django_user_model: "User"):
         login(client, django_user_model)
-        url = tables.linkify_class_by_name('foo')
+        url = tables.linkify_class_by_name("foo")
 
         # Should link to the list view; since there is no 'foo' in the DB
-        assert url == reverse('budget:index')
+        assert url == reverse("budget:index")

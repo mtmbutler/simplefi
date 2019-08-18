@@ -21,40 +21,40 @@ if TYPE_CHECKING:
 
 class TransactionManager(models.Manager):
     @staticmethod
-    def in_last_thirteen_months(user: 'User', **kwargs) -> 'QuerySet':
+    def in_last_thirteen_months(user: "User", **kwargs) -> "QuerySet":
         return Transaction.objects.filter(
             user=user,
             date__range=[
-                d.strftime("%Y-%m-%d")
-                for d in [thirteen_months_ago(), timezone.now()]],
-            **kwargs)
+                d.strftime("%Y-%m-%d") for d in [thirteen_months_ago(), timezone.now()]
+            ],
+            **kwargs,
+        )
 
 
 class UserDataModel(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
 
 
 class Account(UserDataModel):
-    name = models.CharField('Name', max_length=255)
-    date_col_name = models.CharField('Date Header', max_length=255)
-    amt_col_name = models.CharField('Amount Header', max_length=255)
-    desc_col_name = models.CharField('Description Header', max_length=255)
+    name = models.CharField("Name", max_length=255)
+    date_col_name = models.CharField("Date Header", max_length=255)
+    amt_col_name = models.CharField("Amount Header", max_length=255)
+    desc_col_name = models.CharField("Description Header", max_length=255)
 
     class Meta:
-        unique_together = ('user', 'name')
+        unique_together = ("user", "name")
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:account-detail', kwargs={'pk': self.pk})
+        return reverse("budget:account-detail", kwargs={"pk": self.pk})
 
     @property
-    def transaction_set(self) -> 'QuerySet':
+    def transaction_set(self) -> "QuerySet":
         return Transaction.objects.filter(upload__account=self)
 
     @property
@@ -63,23 +63,22 @@ class Account(UserDataModel):
 
 
 class Upload(UserDataModel):
-    SUCCESS_CODE = 'success'
+    SUCCESS_CODE = "success"
 
-    upload_time = models.DateTimeField('Uploaded', auto_now_add=True)
+    upload_time = models.DateTimeField("Uploaded", auto_now_add=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
-    csv = models.FileField(upload_to='csvs')
+    csv = models.FileField(upload_to="csvs")
 
     class Meta:
-        ordering = ['-upload_time']
+        ordering = ["-upload_time"]
 
     def __str__(self):
-        return (
-            self.upload_time
-            .astimezone(timezone.get_current_timezone())
-            .strftime('%d %b %Y - %-I:%M %p'))
+        return self.upload_time.astimezone(timezone.get_current_timezone()).strftime(
+            "%d %b %Y - %-I:%M %p"
+        )
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:upload-detail', kwargs={'pk': self.pk})
+        return reverse("budget:upload-detail", kwargs={"pk": self.pk})
 
     @property
     def num_transactions(self) -> int:
@@ -90,20 +89,23 @@ class Upload(UserDataModel):
         columns = [
             self.account.date_col_name,
             self.account.amt_col_name,
-            self.account.desc_col_name
+            self.account.desc_col_name,
         ]
 
         try:
             df = pd.read_csv(
-                self.csv, parse_dates=[columns[0]], infer_datetime_format=True)
+                self.csv, parse_dates=[columns[0]], infer_datetime_format=True
+            )
         except ValueError as e:
             return str(e)
         df.columns = [c.strip() for c in df.columns]
         try:
             df = df[columns]
         except KeyError:
-            return (f"Not all specified columns {columns} found in CSV"
-                    f" header {list(df.columns)}")
+            return (
+                f"Not all specified columns {columns} found in CSV"
+                f" header {list(df.columns)}"
+            )
 
         # Create transaction objects
         err = None
@@ -113,7 +115,8 @@ class Upload(UserDataModel):
                 upload=self,
                 date=r[columns[0]],
                 amount=r[columns[1]],
-                description=r[columns[2]])
+                description=r[columns[2]],
+            )
             try:
                 t.save()
             except (IntegrityError, ValidationError) as e:
@@ -127,10 +130,10 @@ class Upload(UserDataModel):
 
         # Classify
         patterns = (
-            Pattern.objects
-            .filter(user=self.user)
-            .annotate(matches=models.Count('transaction'))
-            .order_by('-matches'))  # Start with most-used patterns
+            Pattern.objects.filter(user=self.user)
+            .annotate(matches=models.Count("transaction"))
+            .order_by("-matches")
+        )  # Start with most-used patterns
         for p in patterns:
             unmatched = self.transaction_set.filter(pattern=None)
             if not unmatched.exists():
@@ -142,14 +145,13 @@ class Upload(UserDataModel):
 
 class TransactionClass(models.Model):
     CLASSES = (
-        ('income', 'Income'),
-        ('discretionary', 'Discretionary'),
-        ('bills', 'Bills'),
-        ('debt', 'Debt'),
-        ('savings', 'Savings')
+        ("income", "Income"),
+        ("discretionary", "Discretionary"),
+        ("bills", "Bills"),
+        ("debt", "Debt"),
+        ("savings", "Savings"),
     )
-    name = models.CharField('Name', unique=True, max_length=255,
-                            choices=CLASSES)
+    name = models.CharField("Name", unique=True, max_length=255, choices=CLASSES)
 
     class Meta:
         verbose_name_plural = "transaction classes"
@@ -157,20 +159,21 @@ class TransactionClass(models.Model):
     def __str__(self):
         return self.get_name_display()
 
-    def transactions(self, user) -> 'QuerySet':
+    def transactions(self, user) -> "QuerySet":
         return Transaction.objects.filter(
-            user=user, pattern__category__class_field=self)
+            user=user, pattern__category__class_field=self
+        )
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:class-detail', kwargs={'pk': self.pk})
+        return reverse("budget:class-detail", kwargs={"pk": self.pk})
 
 
 class Budget(UserDataModel):
     class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE)
-    value = models.DecimalField('Amount', decimal_places=2, max_digits=9)
+    value = models.DecimalField("Amount", decimal_places=2, max_digits=9)
 
     class Meta:
-        unique_together = ('user', 'class_field')
+        unique_together = ("user", "class_field")
 
     def __str__(self):
         return f"{self.class_field} - {self.value}"
@@ -181,48 +184,50 @@ class Budget(UserDataModel):
 
     @property
     def fmt_value(self) -> str:
-        return f'{self.value:,.2f}'
+        return f"{self.value:,.2f}"
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:class-detail', kwargs={'pk': self.class_field_id})
+        return reverse("budget:class-detail", kwargs={"pk": self.class_field_id})
 
 
 class Category(UserDataModel):
-    class_field = models.ForeignKey(TransactionClass, on_delete=models.CASCADE, null=True)
-    name = models.CharField('Name', max_length=255)
+    class_field = models.ForeignKey(
+        TransactionClass, on_delete=models.CASCADE, null=True
+    )
+    name = models.CharField("Name", max_length=255)
 
     class Meta:
-        unique_together = ('user', 'class_field', 'name')
-        ordering = ['class_field_id', 'name']
+        unique_together = ("user", "class_field", "name")
+        ordering = ["class_field_id", "name"]
         verbose_name_plural = "categories"
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:category-detail', kwargs={'pk': self.pk})
+        return reverse("budget:category-detail", kwargs={"pk": self.pk})
 
     @property
     def num_transactions(self) -> int:
         return self.transaction_set.count()
 
     @property
-    def transaction_set(self) -> 'QuerySet':
+    def transaction_set(self) -> "QuerySet":
         return Transaction.objects.filter(pattern__category=self)
 
 
 class Pattern(UserDataModel):
-    pattern = models.CharField('Match Pattern', max_length=255)
+    pattern = models.CharField("Match Pattern", max_length=255)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
 
     class Meta:
-        unique_together = ('user', 'pattern')
+        unique_together = ("user", "pattern")
 
     def __str__(self):
         return self.pattern
 
     @property
-    def class_field(self) -> 'TransactionClass':
+    def class_field(self) -> "TransactionClass":
         return self.category.class_field
 
     @property
@@ -230,7 +235,7 @@ class Pattern(UserDataModel):
         return self.transaction_set.count()
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:pattern-detail', kwargs={'pk': self.pk})
+        return reverse("budget:pattern-detail", kwargs={"pk": self.pk})
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -238,9 +243,7 @@ class Pattern(UserDataModel):
 
     def match_transactions(self):
         Transaction.objects.filter(
-            user=self.user,
-            description__iregex=self.pattern,
-            pattern=None
+            user=self.user, description__iregex=self.pattern, pattern=None
         ).update(pattern=self)
 
 
@@ -248,63 +251,62 @@ class Transaction(UserDataModel):
     DESC_TRUNC_LEN = 30
 
     upload = models.ForeignKey(Upload, on_delete=models.CASCADE)
-    date = models.DateField('Transaction date')
-    amount = models.DecimalField('Amount', decimal_places=2, max_digits=9)
-    description = models.TextField('Description')
+    date = models.DateField("Transaction date")
+    amount = models.DecimalField("Amount", decimal_places=2, max_digits=9)
+    description = models.TextField("Description")
     pattern = models.ForeignKey(Pattern, on_delete=models.SET_NULL, null=True)
 
     objects = TransactionManager()
 
     class Meta:
-        ordering = ['-date']
-        unique_together = ('user', 'date', 'amount', 'description')
+        ordering = ["-date"]
+        unique_together = ("user", "date", "amount", "description")
 
     def __str__(self):
         return f"{self.account} | {self.date} | {self.amount} | {self.description}"
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:transaction-detail', kwargs={'pk': self.pk})
+        return reverse("budget:transaction-detail", kwargs={"pk": self.pk})
 
     @property
-    def class_field(self) -> 'TransactionClass':
-        return getattr(self.pattern, 'class_field', None)
+    def class_field(self) -> "TransactionClass":
+        return getattr(self.pattern, "class_field", None)
 
     @property
-    def category(self) -> 'Category':
-        return getattr(self.pattern, 'category', None)
+    def category(self) -> "Category":
+        return getattr(self.pattern, "category", None)
 
     @property
-    def account(self) -> 'Account':
-        return getattr(self.upload, 'account', None)
+    def account(self) -> "Account":
+        return getattr(self.upload, "account", None)
 
     @property
     def fmt_amt(self) -> str:
-        return f'{self.amount:,.2f}'
+        return f"{self.amount:,.2f}"
 
     @property
     def trunc_desc(self) -> str:
         if not self.description:
-            return ''
+            return ""
         elif len(self.description) <= self.DESC_TRUNC_LEN:
             return self.description
         else:
-            return self.description[:self.DESC_TRUNC_LEN] + '...'
+            return self.description[: self.DESC_TRUNC_LEN] + "..."
 
 
 class CSVBackup(UserDataModel):
-    SUCCESS_CODE = 'success'
+    SUCCESS_CODE = "success"
     NO_CSV_MSG = "No CSV associated with selected backup."
-    BACKUP_FIELDS = ['Account', 'Class', 'Category',
-                     'Date', 'Amount', 'Description']
+    BACKUP_FIELDS = ["Account", "Class", "Category", "Date", "Amount", "Description"]
 
-    creation_time = models.DateTimeField('Created', auto_now_add=True)
-    csv = models.FileField('CSV', upload_to='csvs', null=True)
+    creation_time = models.DateTimeField("Created", auto_now_add=True)
+    csv = models.FileField("CSV", upload_to="csvs", null=True)
 
     def __str__(self):
-        return self.creation_time.strftime('%Y-%m-%d %H:%M:%S')
+        return self.creation_time.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_absolute_url(self) -> str:
-        return reverse('budget:backup-detail', kwargs={'pk': self.pk})
+        return reverse("budget:backup-detail", kwargs={"pk": self.pk})
 
     def create_backup(self):
         """Saves all user transactions to a CSV FileField.
@@ -312,36 +314,39 @@ class CSVBackup(UserDataModel):
         Includes account name, class name, and category name in addition
         to the base model fields.
         """
-        qs = Transaction.objects.filter(
-            user=self.user
-        ).order_by('upload__account', 'date')
+        qs = Transaction.objects.filter(user=self.user).order_by(
+            "upload__account", "date"
+        )
 
         # Create the CSV
-        now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
-        path = os.path.join(settings.MEDIA_ROOT, 'csvs', f'transactions_{now}.csv')
-        with open(path, 'w') as f:
+        now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+        path = os.path.join(settings.MEDIA_ROOT, "csvs", f"transactions_{now}.csv")
+        with open(path, "w") as f:
             writer = csv.DictWriter(f, fieldnames=self.BACKUP_FIELDS)
             writer.writeheader()
             for t in qs.all():
-                writer.writerow({
-                    'Account': getattr(t.account, 'name', 'No Account'),
-                    'Class': getattr(t.class_field, 'name', '').title(),
-                    'Category': getattr(t.category, 'name', ''),
-                    'Date': t.date.strftime('%Y-%m-%d'),
-                    'Amount': str(t.amount),
-                    'Description': t.description})
+                writer.writerow(
+                    {
+                        "Account": getattr(t.account, "name", "No Account"),
+                        "Class": getattr(t.class_field, "name", "").title(),
+                        "Category": getattr(t.category, "name", ""),
+                        "Date": t.date.strftime("%Y-%m-%d"),
+                        "Amount": str(t.amount),
+                        "Description": t.description,
+                    }
+                )
 
         self.csv.name = path
         self.save()
 
-    def file_response(self) -> 'FileResponse':
+    def file_response(self) -> "FileResponse":
         """Serves up the CSV as a download."""
         if not self.csv:
-            now = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
-            path = os.path.join(settings.MEDIA_ROOT, f'error_{now}.txt')
-            with open(path, 'w') as f:
+            now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+            path = os.path.join(settings.MEDIA_ROOT, f"error_{now}.txt")
+            with open(path, "w") as f:
                 f.write(self.NO_CSV_MSG)
-            return FileResponse(open(path, 'rb'), as_attachment=True)
+            return FileResponse(open(path, "rb"), as_attachment=True)
         return FileResponse(self.csv, as_attachment=True)
 
     def restore(self) -> str:
@@ -365,26 +370,31 @@ class CSVBackup(UserDataModel):
         # Read CSV
         try:
             df = pd.read_csv(
-                self.csv.path, usecols=self.BACKUP_FIELDS,
-                infer_datetime_format=True)
+                self.csv.path, usecols=self.BACKUP_FIELDS, infer_datetime_format=True
+            )
         except ValueError as e:
             return str(e)
 
         # Build dict of accounts, creating new ones as needed
         accounts = {}  # type: Dict[str, Account]
-        for acc_name in df['Account'].unique():
+        for acc_name in df["Account"].unique():
             acc_obj, __ = Account.objects.get_or_create(
-                user=self.user, name=acc_name,
-                defaults=dict(date_col_name='Date',
-                              amt_col_name='Amount',
-                              desc_col_name='Description'))
+                user=self.user,
+                name=acc_name,
+                defaults=dict(
+                    date_col_name="Date",
+                    amt_col_name="Amount",
+                    desc_col_name="Description",
+                ),
+            )
             accounts[acc_name] = acc_obj
 
         # Create new uploads to associate with each account
         uploads = {}  # type: Dict[str, Upload]
         for acc_name, account in accounts.items():
             ul_obj = Upload.objects.create(
-                user=self.user, account=account, csv=self.csv)
+                user=self.user, account=account, csv=self.csv
+            )
             uploads[acc_name] = ul_obj
 
         # Iterate through transactions
@@ -392,11 +402,12 @@ class CSVBackup(UserDataModel):
         for __, r in df.iterrows():
             t = Transaction(
                 user=self.user,
-                upload=uploads[r['Account']],
-                date=r['Date'],
-                amount=r['Amount'],
-                description=r['Description'],
-                pattern=None)
+                upload=uploads[r["Account"]],
+                date=r["Date"],
+                amount=r["Amount"],
+                description=r["Description"],
+                pattern=None,
+            )
             try:
                 t.save()
             except (IntegrityError, ValidationError) as e:
@@ -410,10 +421,10 @@ class CSVBackup(UserDataModel):
 
         # Classify
         patterns = (
-            Pattern.objects
-            .filter(user=self.user)
-            .annotate(matches=models.Count('transaction'))
-            .order_by('-matches'))  # Start with most-used patterns
+            Pattern.objects.filter(user=self.user)
+            .annotate(matches=models.Count("transaction"))
+            .order_by("-matches")
+        )  # Start with most-used patterns
         for p in patterns:
             p.match_transactions()
 
