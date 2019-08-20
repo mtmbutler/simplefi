@@ -27,21 +27,22 @@ class DebtSummaryTable:
     MAX_ROWS = 120
 
     def __init__(self, request: "HttpRequest", do_forecasting: bool = False):
-        self.accs = CreditLine.objects.filter(
+        qs = CreditLine.objects.filter(
             user=request.user, credit_line__gt=0
-        )  # type: QuerySet
+        ).order_by("priority")
+        self.accs = [cl for cl in qs if cl.statement_set.exists()]  # type: List[CreditLine]
 
         # Keep track of any warnings raised
         self.warnings = []  # type: List[str]
 
         # Cache latest statement dates, current balances and order
-        self.latest_stmnts = {
-            a.name: a.latest_statement_date for a in self.accs
-        }  # type: Dict[str, date]
-        self.balances = {
-            a.name: a.balance for a in self.accs
-        }  # type: Dict[str, Decimal]
-        self.names = [a.name for a in self.accs.order_by("priority")]  # type: List[str]
+        self.latest_stmnts = {}  # type: Dict[str, date]
+        self.balances = {}  # type: Dict[str, Decimal]
+        self.names = []  # type: List[str]
+        for a in self.accs:
+            self.latest_stmnts[a.name] = a.latest_statement_date
+            self.balances[a.name] = a.balance
+            self.names.append(a.name)
 
         # Cache debt budget
         budget_obj = get_debt_budget(request.user)

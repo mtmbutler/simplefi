@@ -1,9 +1,9 @@
 {% extends "budget_base.html" %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% block title %}{% block header %}Are you sure?{% endblock %}{% endblock %}
 
 {% block content %}
-  <h2>Are you sure?</h2>
     <p>
     Pressing the button below will clear all your transaction data from
     the server. Make sure you've already created a backup

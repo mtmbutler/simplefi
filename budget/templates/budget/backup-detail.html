@@ -1,19 +1,15 @@
 {% extends "budget_base.html" %}
-{% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}{% block header %}Backup: {{ csvbackup }}{% endblock %}{% endblock %}
 
 {% block content %}
-  <h2>Backup: {{ csvbackup }}</h2>
-  <div class="container-fluid">
-    <div class="row">
-        {% if csvbackup.csv %}
-        <a href="{% url 'budget:backup-download' csvbackup.id %}">{% bootstrap_button 'Download CSV' %}</a>
-          <form action="{% url 'budget:backup-restore' csvbackup.id %}" method="post" class="form form-group">
-            {% csrf_token %}
-            {% bootstrap_button 'Restore Transactions' %}
-          </form>
-        {% endif %}
-        <a href="{% url 'budget:backup-delete' csvbackup.id %}">{% bootstrap_button 'Delete' %}</a>
-    </div>
-  </div>
+    {% if csvbackup.csv %}
+    <a href="{% url 'budget:backup-download' csvbackup.id %}">{% bootstrap_button 'Download CSV' %}</a><br><br>
+      <form action="{% url 'budget:backup-restore' csvbackup.id %}" method="post" class="form form-group">
+        {% csrf_token %}
+        {% bootstrap_button 'Restore Transactions' %}
+      </form>
+    {% endif %}
+    <a href="{% url 'budget:backup-delete' csvbackup.id %}">{% bootstrap_button 'Delete' %}</a>
 {% endblock %}

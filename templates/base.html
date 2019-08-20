@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {% block title %}<title>SimpleFi</title>{% endblock %}
+  <title>{% block title %}Home{% endblock %} - SimpleFi</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
@@ -10,7 +10,7 @@
 
     <!-- Add additional CSS/JS in static file -->
   {% load static %}
-  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="{% static 'style.css' %}?id=2234">
   <script src="{% static 'main.js' %}"></script>
 </head>
 <body>
@@ -47,7 +47,7 @@
   </nav>
   <div class="container-fluid">
     <div class="row">
-        <div class="col-sm-6">
+        <div class="msgbox">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">
                   <a class="close" href="#" data-dismiss="alert">×</a>
@@ -58,13 +58,10 @@
     </div>
     <div class="row">
       <div id="main" class="main">
+        <h2>{% block header %}{% endblock %}</h2>
         {% block content %}{% endblock %}
       </div>
     </div>
   </div>
-  {# Optional Bootstrap JS#}
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </body>
 </html>

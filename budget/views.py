@@ -257,11 +257,10 @@ class BackupDelete(LoginRequiredMixin, AuthQuerySetMixin, DeleteView):
 
 
 # -- UPLOADS --
-class UploadList(LoginRequiredMixin, SingleTableMixin, FilterView):
+class UploadList(LoginRequiredMixin, SingleTableView):
     model = models.Upload
     table_class = tables.UploadTable
     template_name = "budget/upload-list.html"
-    filterset_class = tables.UploadFilter
 
     def get_table_data(self) -> "QuerySet":
         qs = super().get_table_data()

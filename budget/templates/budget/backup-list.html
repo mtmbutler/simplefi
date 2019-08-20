@@ -1,31 +1,15 @@
 {% extends "budget_base.html" %}
-{% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% block title %}{% block header %}Backups{% endblock %}{% endblock %}
 
 {% block content %}
-  <h2>Backups</h2>
   <form action="{% url 'budget:backup-addnew' %}" method="post" class="form form-group">
   {% csrf_token %}
     {% bootstrap_button 'Create New Backup' %}
   </form>
-  <a href="{% url 'budget:backup-add' %}">{% bootstrap_button 'Upload Backup File' %}</a>
+  <a href="{% url 'budget:backup-add' %}">{% bootstrap_button 'Upload Backup File' %}</a><br><br>
   <a href="{% url 'budget:backup-purge-confirm' %}">{% bootstrap_button 'Clear Transaction Data' %}</a>
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-sm-8">
-        {% render_table table 'django_tables2/bootstrap.html' %}
-      </div>
-      <div class="col-sm-4">
-        {% if filter %}
-          <form action="" method="get" class="form form-group">
-            {% bootstrap_form filter.form layout='horizontal' size='small' %}
-            {% bootstrap_button 'Filter' %}
-          </form>
-          <a href="{% url 'budget:backup-list' %}">
-            {% bootstrap_button 'Clear' %}
-          </a>
-        {% endif %}
-      </div>
-    </div>
-  </div>
+    {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}

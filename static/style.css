@@ -68,9 +68,19 @@
 }
 
 /* Page content */
+.msgbox {
+  display: table;
+  margin-right: auto;
+  margin-left: auto;
+  min-width: 400px;
+  padding: 15px;
+}
+
 .main {
-  transition: margin-left .5s;
-  padding: 20px;
-  margin-top: -20px;
-  margin-left: 0;
+  display: table;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 10px;
+  margin-top: -30px;
+  min-width: 60%
 }

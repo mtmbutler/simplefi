@@ -79,12 +79,6 @@ class BackupTable(tables.Table):
 
 
 # -- UPLOADS --
-class UploadFilter(filters.FilterSet):
-    account = filters.ModelChoiceFilter(
-        queryset=user_filter("budget.Account"), label="Account"
-    )
-
-
 class UploadTable(tables.Table):
     account = tables.Column(
         accessor="account",
