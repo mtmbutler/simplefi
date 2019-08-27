@@ -2,22 +2,17 @@
 {% load staticfiles %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% block header %}
+    {% block title %}
+    Upload: {{ upload }}
+{% endblock %}
+    (<a href="{% url 'budget:account-detail' upload.account.id %}">{{ upload.account }}</a>)
+{% endblock %}
 
 {% block content %}
-  <h2>
-      Upload: {{ upload.upload_time }}
-        (<a href="{% url 'budget:account-detail' upload.account.id %}">{{ upload.account }}</a>)
-  </h2>
-  <div class="container-fluid">
-    <div class="row">
-        <a href="{{ upload.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
-        <a href="{% url 'budget:upload-delete' upload.id %}">{% bootstrap_button 'Delete' %}</a>
-    </div>
-    <div class="row">
-        <h4>Transactions</h4>
-          <div class="col-sm-8">
-            {% render_table table 'django_tables2/bootstrap.html' %}
-          </div>
-    </div>
-  </div>
+    <a href="{{ upload.csv.url }}">{% bootstrap_button 'View CSV' %}</a>
+    <a href="{% url 'budget:upload-delete' upload.id %}">{% bootstrap_button 'Delete' %}</a>
+    <a href="{% url 'budget:upload-add' %}">{% bootstrap_button 'Add New Upload' %}</a>
+    <h4>Transactions</h4>
+    {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}

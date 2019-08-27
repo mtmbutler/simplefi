@@ -1,12 +1,18 @@
 {% extends "budget_base.html" %}
+{% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% block header %}
+        Delete Pattern: {{ pattern }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Delete pattern</h2>
     <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="save btn btn-default">Confirm</button>
+        {{ form|crispy }}
+        <a type="submit">{% bootstrap_button 'Confirm' %}</a>
     </form>
-    <ul>
-        <li><a href="{% url 'budget:pattern-detail' pattern.id %}">Back</a></li>
-    </ul>
+    <a href="{% url 'budget:pattern-detail' pattern.id %}">
+        {% bootstrap_button 'Back to Patterns' %}
+    </a>
 {% endblock %}

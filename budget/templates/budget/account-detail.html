@@ -1,7 +1,11 @@
 {% extends "budget_base.html" %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
-{% block title %}{% block header %}Account: {{ account.name }}{% endblock %}{% endblock %}
+{% block title %}
+    {% block header %}
+        Account: {{ account.name }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
     <h4>Details</h4>

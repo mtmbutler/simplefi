@@ -1,12 +1,16 @@
 {% extends "budget_base.html" %}
+{% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% block header %}
+        Update Category: {{ category.name }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Update category</h2>
     <form method="post">{% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Update">
+        {{ form|crispy }}
+        <a type="submit">{% bootstrap_button 'Update' %}</a>
     </form>
-    <ul>
-        <li><a href="{% url 'budget:category-detail' category.id %}">Back</a></li>
-    </ul>
+    <a href="{% url 'budget:category-detail' category.id %}">{% bootstrap_button "Back to Category: "|add:category.name %}</a>
 {% endblock %}

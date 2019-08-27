@@ -1,7 +1,11 @@
 {% extends "budget_base.html" %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
-{% block title %}{% block header %}Are you sure?{% endblock %}{% endblock %}
+{% block title %}
+    {% block header %}
+        Are you sure?
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
     <p>

@@ -1,20 +1,22 @@
 {% extends "budget_base.html" %}
+{% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% block header %}
+        New Pattern
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Add pattern</h2>
     <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="save btn btn-default">Save</button>
+        {{ form|crispy }}
+        <a type="submit">{% bootstrap_button 'Save' %}</a>
     </form>
-    <ul>
-        <li><a href="{% url 'budget:pattern-list' %}">Back</a></li>
-    </ul>
+    <a href="{% url 'budget:pattern-list' %}">{% bootstrap_button 'Back to Patterns' %}</a>
 
     {# -- UNMATCHED TRANSACTIONS -- #}
     <p><b>Unmatched transactions: {{ num_unmatched_transactions }}</b></p>
-    <ul>
-        {% for t in unmatched_transaction_list %}
-            <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
-        {% endfor %}
-    </ul>
+    {% for t in unmatched_transaction_list %}
+        <a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a>
+    {% endfor %}
 {% endblock %}

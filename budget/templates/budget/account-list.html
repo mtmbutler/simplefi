@@ -2,7 +2,11 @@
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
 
-{% block title %}{% block header %}Accounts{% endblock %}{% endblock %}
+{% block title %}
+    {% block header %}
+        Accounts
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
   <a href="{% url 'budget:account-add' %}">{% bootstrap_button 'Add New Account' %}</a>

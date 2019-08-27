@@ -1,25 +1,23 @@
 {% extends "budget_base.html" %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% block title %}
+    {% block header %}
+        Category: {{ category.name }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-  <h2>Category: {{ category.name }}</h2>
-  <div class="container-fluid">
-    <div class="row">
-        <h4>Details</h4>
-        <b>Class:</b>
-            <a href="{% url 'budget:class-detail' category.class_field.id %}">
-                {{ category.class_field }}
-            </a>
-            <br>
-        <a href="{% url 'budget:category-update' category.id %}">{% bootstrap_button 'Update' %}</a>
-        <a href="{% url 'budget:category-delete' category.id %}">{% bootstrap_button 'Delete' %}</a>
-    </div>
-    <div class="row">
-        <h4>Transactions</h4>
-          <div class="col-sm-8">
-            {% render_table table 'django_tables2/bootstrap.html' %}
-          </div>
-    </div>
-  </div>
+    <h4>Details</h4>
+    <b>Class:</b>
+    <a href="{% url 'budget:class-detail' category.class_field.id %}">
+        {{ category.class_field }}
+    </a>
+    <br>
+    <a href="{% url 'budget:category-update' category.id %}">{% bootstrap_button 'Update' %}</a>
+    <a href="{% url 'budget:category-delete' category.id %}">{% bootstrap_button 'Delete' %}</a>
+
+    <h4>Transactions</h4>
+    {% render_table table 'django_tables2/bootstrap.html' %}
+
 {% endblock %}

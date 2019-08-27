@@ -1,12 +1,18 @@
 {% extends "budget_base.html" %}
+{% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% block header %}
+        Update Pattern: {{ pattern }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Update pattern</h2>
     <form method="post">{% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Update">
+        {{ form|crispy }}
+        <a type="submit">{% bootstrap_button 'Update' %}</a>
     </form>
-    <ul>
-        <li><a href="{% url 'budget:pattern-detail' pattern.id %}">Back</a></li>
-    </ul>
+    <a href="{% url 'budget:pattern-detail' pattern.id %}">
+        {% bootstrap_button 'Back to Pattern' %}
+    </a>
 {% endblock %}

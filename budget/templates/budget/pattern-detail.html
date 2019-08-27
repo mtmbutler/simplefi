@@ -1,30 +1,28 @@
 {% extends "budget_base.html" %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% block title %}
+    {% block header %}
+        Pattern Detail: {{ pattern.pattern }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Pattern Detail: {{ pattern.pattern }}</h2>
-  <div class="container-fluid">
-    <div class="row">
-        <h4>Details</h4>
-        <b>Class:</b>
-            <a href="{% url 'budget:class-detail' pattern.class_field.id %}">
-                {{ pattern.class_field }}
-            </a>
-            <br>
-        <b>Category:</b>
-            <a href="{% url 'budget:category-detail' pattern.category.id %}">
-                {{ pattern.category }}
-            </a>
-            <br>
-        <a href="{% url 'budget:pattern-update' pattern.id %}">{% bootstrap_button 'Update' %}</a>
-        <a href="{% url 'budget:pattern-delete' pattern.id %}">{% bootstrap_button 'Delete' %}</a>
-    </div>
-    <div class="row">
-        <h4>Transactions</h4>
-          <div class="col-sm-8">
-            {% render_table table 'django_tables2/bootstrap.html' %}
-          </div>
-    </div>
-  </div>
+    <h4>Details</h4>
+    <b>Class:</b>
+        <a href="{% url 'budget:class-detail' pattern.class_field.id %}">
+            {{ pattern.class_field }}
+        </a>
+        <br>
+    <b>Category:</b>
+        <a href="{% url 'budget:category-detail' pattern.category.id %}">
+            {{ pattern.category }}
+        </a>
+        <br>
+    <a href="{% url 'budget:pattern-update' pattern.id %}">{% bootstrap_button 'Update' %}</a>
+    <a href="{% url 'budget:pattern-delete' pattern.id %}">{% bootstrap_button 'Delete' %}</a>
+
+    <h4>Transactions</h4>
+    {% render_table table 'django_tables2/bootstrap.html' %}
+
 {% endblock %}

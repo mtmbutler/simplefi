@@ -1,8 +1,12 @@
 {% extends "budget_base.html" %}
 {% load bootstrap3 %}
+{% block title %}
+    {% block header %}
+        Transaction Detail
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Transaction Detail</h2>
     <p>
         <b>Upload batch:</b>
         <a href="{% url 'budget:upload-detail' transaction.upload.id %}">{{ transaction.upload }}</a>

@@ -1,9 +1,13 @@
 {% extends "budget_base.html" %}
 {% load render_table from django_tables2 %}
 {% load bootstrap3 %}
+{% block title %}
+    {% block header %}
+        Uploads
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Uploads</h2>
     <a href="{% url 'budget:upload-add' %}">{% bootstrap_button 'Add New Upload' %}</a>
     {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}
