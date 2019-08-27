@@ -4,11 +4,11 @@
 
 {% block content %}
     <h2>Accounts</h2>
-    <a href="{% url 'debt:account-add' %}">{% bootstrap_button 'Add New Account' %}</a>
-    <a href="{% url 'debt:creditline-bulk-update' %}">{% bootstrap_button 'Bulk Upload New Accounts' %}</a>
-      <div class="container-fluid">
-        <div class="row">
-          {% render_table table 'django_tables2/bootstrap.html' %}
-        </div>
-      </div>
+    <a href="{% url 'debt:account-add' %}">
+        {% bootstrap_button 'Add New Account' %}
+    </a>
+    <a href="{% url 'debt:creditline-bulk-update' %}">
+        {% bootstrap_button 'Bulk Upload New Accounts' %}
+    </a>
+    {% render_table table 'django_tables2/bootstrap.html' %}
 {% endblock %}

@@ -1,12 +1,18 @@
 {% extends "debt_base.html" %}
+{% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% block header %}
+        Delete Statement: {{ statement }}
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Delete statement</h2>
     <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="save btn btn-default">Confirm</button>
+        {{ form|crispy }}
+        <a type="submit">{% bootstrap_button 'Confirm' %}</a>
     </form>
-    <ul>
-        <li><a href="{% url 'debt:account-detail' statement.account.id %}">Back</a></li>
-    </ul>
+    <a href="{% url 'debt:account-detail' statement.account.id %}">
+        {% bootstrap_button 'Back to Statement' %}
+    </a>
 {% endblock %}

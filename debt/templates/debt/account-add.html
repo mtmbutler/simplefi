@@ -1,12 +1,18 @@
 {% extends "debt_base.html" %}
+{% load bootstrap3 %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% block header %}
+        New Account
+    {% endblock %}
+{% endblock %}
 
 {% block content %}
-    <h2>Add account</h2>
     <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="save btn btn-default">Save</button>
+        {{ form|crispy }}
+        <a type="submit">{% bootstrap_button 'Save' %}</a>
     </form>
-    <ul>
-        <li><a href="{% url 'debt:account-list' %}">Back</a></li>
-    </ul>
+    <a href="{% url 'debt:account-list' %}">
+        {% bootstrap_button 'Back to Credit Lines' %}
+    </a>
 {% endblock %}
