@@ -529,44 +529,39 @@ class TestUpdateViews:
 
 
 class TestDeleteViews:
-    @staticmethod
-    def delete_view_test(
-        client, django_user_model, model, url, user_required=True, obj_params=None
-    ):
-        # Make sure there are no existing objects
-        Model = apps.get_model(*model.split("."))
-        Model.objects.all().delete()
-        assert Model.objects.count() == 0
+    def test_account_delete_view(self, client, django_user_model):
 
-        # Create the object and assert success
-        if obj_params is None:
-            obj_params = dict()
+        model = apps.get_model("debt.CreditLine")
+        url = "debt:account-delete"
+
         user = login(client, django_user_model)
-        if user_required:
-            obj_params.update(user=user)
-        obj = mommy.make(model, **obj_params)
-        obj = create_recursive_dependencies(obj)
-        obj.save()
-        print(obj.pk)
-        assert Model.objects.count() == 1
+        obj = mommy.make(model, user=user)
+        assert model.objects.count() == 1
 
         # Check the delete page
         response = client.get(reverse(url, kwargs={"pk": obj.pk}))
-        assert response.status_code == 200 and Model.objects.count() == 1
+        assert response.status_code == 200 and model.objects.count() == 1
 
         # Delete the object and verify
         response = client.post(reverse(url, kwargs={"pk": obj.pk}))
-        assert response.status_code == 302 and Model.objects.count() == 0
-
-    def test_account_delete_view(self, client, django_user_model):
-        model = "debt.CreditLine"
-        url = "debt:account-delete"
-        self.delete_view_test(client, django_user_model, model, url)
+        assert response.status_code == 302 and model.objects.count() == 0
 
     def test_statement_delete_view(self, client, django_user_model):
-        model = "debt.Statement"
+        model = apps.get_model("debt.Statement")
         url = "debt:statement-delete"
-        self.delete_view_test(client, django_user_model, model, url)
+
+        user = login(client, django_user_model)
+        cl = mommy.make("debt.CreditLine", user=user)
+        obj = mommy.make(model, user=user, account=cl, year=2018, month=11)
+        assert model.objects.count() == 1
+
+        # Check the delete page
+        response = client.get(reverse(url, kwargs={"pk": obj.pk}))
+        assert response.status_code == 200 and model.objects.count() == 1
+
+        # Delete the object and verify
+        response = client.post(reverse(url, kwargs={"pk": obj.pk}))
+        assert response.status_code == 302 and model.objects.count() == 0
 
 
 class TestCreditLineBulkUpdateView:

@@ -165,5 +165,7 @@ class Statement(UserDataModel):
     @property
     def date(self) -> "date":
         return datetime.date(
-            year=self.year, month=self.month, day=self.account.statement_date
+            year=self.year,
+            month=self.month,
+            day=getattr(self.account, "statement_date", 0) or 1,
         )
