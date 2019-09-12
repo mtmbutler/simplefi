@@ -27,10 +27,12 @@ class DebtSummaryTable:
     MAX_ROWS = 120
 
     def __init__(self, request: "HttpRequest", do_forecasting: bool = False):
-        qs = CreditLine.objects.filter(
-            user=request.user, credit_line__gt=0
-        ).order_by("priority")
-        self.accs = [cl for cl in qs if cl.statement_set.exists()]  # type: List[CreditLine]
+        qs = CreditLine.objects.filter(user=request.user, credit_line__gt=0).order_by(
+            "priority"
+        )
+        self.accs = [
+            cl for cl in qs if cl.statement_set.exists()
+        ]  # type: List[CreditLine]
 
         # Keep track of any warnings raised
         self.warnings = []  # type: List[str]

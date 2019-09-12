@@ -91,4 +91,4 @@ ACCOUNT_ACTIVATION_DAYS = 7
 MESSAGE_TAGS = {msg_const.ERROR: "danger", msg_const.DEBUG: "info"}
 
 # Crispy template pack
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
+CRISPY_TEMPLATE_PACK = "bootstrap3"
