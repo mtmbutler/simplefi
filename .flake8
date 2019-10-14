@@ -1,0 +1,10 @@
+[flake8]
+ignore = W293,W503,E501,F401,F403,F405,F811,F841
+max-line-length = 92
+max-complexity = 14
+exclude =
+    .idea
+    .git
+    .mypy_cache
+    venv
+    *__init__.py
