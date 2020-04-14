@@ -16,7 +16,9 @@
 
     {# -- UNMATCHED TRANSACTIONS -- #}
     <p><b>Unmatched transactions: {{ num_unmatched_transactions }}</b></p>
+    <ul>
     {% for t in unmatched_transaction_list %}
-        <a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a>
+        <li><a href="{% url 'budget:transaction-detail' t.id %}">{{ t }}</a></li>
     {% endfor %}
+    </ul>
 {% endblock %}
