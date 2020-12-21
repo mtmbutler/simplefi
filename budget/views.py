@@ -1,25 +1,25 @@
 import datetime
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union
 
 import pandas as pd
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
-from django.http import HttpResponseRedirect, FileResponse
+from django.http import FileResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import FormView, DetailView, RedirectView, TemplateView
+from django.views.generic import DetailView, FormView, RedirectView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
-from django_filters.views import FilterView, FilterMixin
+from django_filters.views import FilterMixin, FilterView
 from django_tables2 import Column, Table
 from django_tables2.views import SingleTableMixin, SingleTableView
 
 from budget import forms, models, tables
-from budget.utils import oys_qs, thirteen_months_ago, first_day_month_after
+from budget.utils import first_day_month_after, oys_qs, thirteen_months_ago
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet

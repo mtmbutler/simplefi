@@ -3,7 +3,7 @@ import math
 import os
 import random
 import string
-from typing import Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 import pandas as pd
 from django.apps import apps

@@ -1,12 +1,12 @@
 import csv
 import datetime
 import os
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
 from django.conf import settings
-from django.db import models, IntegrityError
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, models
 from django.http import FileResponse
 from django.urls import reverse
 from django.utils import timezone

@@ -1,6 +1,6 @@
 import calendar
 from decimal import Decimal
-from typing import Any, Dict, List, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from django.http import HttpRequest
 from django.utils import timezone

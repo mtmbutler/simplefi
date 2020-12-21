@@ -2,7 +2,7 @@ import csv
 import datetime
 import os
 import tempfile
-from typing import Any, List, Callable, Dict, Mapping, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Tuple, Union
 
 import pandas as pd
 from django.contrib import messages

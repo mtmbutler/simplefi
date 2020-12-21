@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from typing import Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple, Union
 
 from django.conf import settings
 from django.db import models

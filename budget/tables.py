@@ -1,4 +1,4 @@
-from typing import Any, Callable, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 import django_filters as filters
 import django_tables2 as tables

@@ -1,5 +1,5 @@
 import datetime
-from typing import Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 from model_mommy import mommy
 
