@@ -1,13 +1,15 @@
 /* Navbar container */
 .simplefi-navbar {
   overflow: hidden;
-  background-color: #00A6A4;
+  background:linear-gradient(#02818a, #02818e);
+  border-bottom:1px solid rgba(0,0,0,0.2);
 }
 
 /* Links inside the navbar */
 .simplefi-navbar a {
   float: left;
   font-size: 16px;
+  font-weight: bold;
   color: white;
   text-align: center;
   padding: 14px 16px;
@@ -17,6 +19,7 @@
 /* The dropdown container */
 .simplefi-dropdown {
   float: left;
+  font-weight: bold;
   overflow: hidden;
 }
 
