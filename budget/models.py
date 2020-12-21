@@ -74,7 +74,7 @@ class Upload(UserDataModel):
 
     def __str__(self):
         return self.upload_time.astimezone(timezone.get_current_timezone()).strftime(
-            "%d %b %Y - %-I:%M %p"
+            "%d %b %Y - %I:%M %p"
         )
 
     def get_absolute_url(self) -> str:
