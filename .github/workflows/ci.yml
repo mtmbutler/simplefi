@@ -27,10 +27,6 @@ jobs:
         run: |
           pip install black==19.10b0
           black --check .
-      - name: Mypy
-        run: |
-          pip install mypy==0.790
-          mypy .
       - name: Flake8
         run: |
           pip install flake8==3.8.4
