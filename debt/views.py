@@ -179,7 +179,7 @@ class CreditLineBulkUpdate(LoginRequiredMixin, generic.FormView):
         # Iterate through the data
         counts = {"Existing Accounts Not Overwritten": 0, "New Accounts Added": 0}
         for __, row in df.iterrows():
-            acc, created = models.CreditLine.objects.get_or_create(
+            _, created = models.CreditLine.objects.get_or_create(
                 user=self.request.user,
                 name=row["name"],
                 defaults=dict(
@@ -287,7 +287,7 @@ class StatementBulkUpdate(LoginRequiredMixin, generic.FormView):
                 acc_objs[acc_name] = acc
 
         # Add columns for year and month
-        # Todo: probably some exceptions to catch here
+        # There are probably some exceptions to catch here
         df["Year"] = df["Date"].dt.year
         df["Month"] = df["Date"].dt.month
 
@@ -301,7 +301,7 @@ class StatementBulkUpdate(LoginRequiredMixin, generic.FormView):
             if row["Account"] not in acc_objs:
                 counts["Unknown Accounts"] += 1
                 continue
-            stmt, created = models.Statement.objects.get_or_create(
+            _, created = models.Statement.objects.get_or_create(
                 user=self.request.user,
                 account=acc_objs[row["Account"]],
                 year=row["Year"],

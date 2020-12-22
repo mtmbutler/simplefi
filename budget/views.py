@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import FieldError
 from django.db.models import ForeignKey
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
@@ -24,6 +24,7 @@ from budget.utils import first_day_month_after, oys_qs, thirteen_months_ago
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from django.forms import Form
+    from django.http import FileResponse
 
     from budget.models import Budget
 
@@ -149,10 +150,10 @@ class AccountView(LoginRequiredMixin, TransactionTableMixin, DetailView):
     model = models.Account
     template_name = "budget/account-detail.html"
 
-    def exclude_cols(self) -> Tuple[str, ...]:
+    def exclude_cols(self) -> Tuple[str, ...]:  # pylint: disable=arguments-differ
         return tuple(["account"])
 
-    def get_filter_kwargs(self) -> Dict[str, Any]:
+    def get_filter_kwargs(self) -> Dict[str, Any]:  # pylint: disable=arguments-differ
         return dict(user=self.request.user, upload__account=self.object)
 
 
@@ -271,10 +272,10 @@ class UploadView(LoginRequiredMixin, TransactionTableMixin, DetailView):
     model = models.Upload
     template_name = "budget/upload-detail.html"
 
-    def exclude_cols(self) -> Tuple[str, ...]:
+    def exclude_cols(self) -> Tuple[str, ...]:  # pylint: disable=arguments-differ
         return "account", "upload"
 
-    def get_filter_kwargs(self) -> Dict[str, Any]:
+    def get_filter_kwargs(self) -> Dict[str, Any]:  # pylint: disable=arguments-differ
         return dict(user=self.request.user, upload=self.object)
 
 
@@ -285,14 +286,14 @@ class UploadCreate(LoginRequiredMixin, AuthForeignKeyMixin, CreateView):
 
     def form_valid(self, form: "Form") -> "HttpResponseRedirect":
         form.instance.user = self.request.user
-        self.object = form.save()
+        self.object = form.save()  # pylint: disable=attribute-defined-outside-init
 
         msg = self.object.parse_transactions()
         if msg == self.model.SUCCESS_CODE:
             # Add transactions after saving, before redirecting
             url = self.get_success_url()
         else:
-            # Todo: redirect to a page showing the error mesage
+            # This should redirect to a page showing the error mesage instead
             self.object.delete()
             messages.error(self.request, f"Upload failed: {msg}")
             url = reverse("budget:upload-list")
@@ -379,10 +380,10 @@ class CategoryView(LoginRequiredMixin, TransactionTableMixin, DetailView):
     model = models.Category
     template_name = "budget/category-detail.html"
 
-    def exclude_cols(self) -> Tuple[str, ...]:
+    def exclude_cols(self) -> Tuple[str, ...]:  # pylint: disable=arguments-differ
         return "class_", "category"
 
-    def get_filter_kwargs(self) -> Dict[str, Any]:
+    def get_filter_kwargs(self) -> Dict[str, Any]:  # pylint: disable=arguments-differ
         return dict(user=self.request.user, pattern__category=self.object)
 
 
@@ -450,10 +451,10 @@ class PatternView(LoginRequiredMixin, TransactionTableMixin, DetailView):
     model = models.Pattern
     template_name = "budget/pattern-detail.html"
 
-    def exclude_cols(self) -> Tuple[str, ...]:
+    def exclude_cols(self) -> Tuple[str, ...]:  # pylint: disable=arguments-differ
         return "class_", "category", "pattern"
 
-    def get_filter_kwargs(self) -> Dict[str, Any]:
+    def get_filter_kwargs(self) -> Dict[str, Any]:  # pylint: disable=arguments-differ
         return dict(user=self.request.user, pattern=self.object)
 
 
@@ -464,7 +465,7 @@ class PatternCreate(
     template_name = "budget/pattern-add.html"
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
-        context = super(PatternCreate, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         li = models.Transaction.objects.filter(
             user=self.request.user, pattern=None
         ).order_by("description")
@@ -500,7 +501,9 @@ class PatternBulkUpdate(LoginRequiredMixin, FormView):
     success_url = reverse_lazy("budget:pattern-list")
     template_name = "budget/pattern-bulk-update.html"
 
-    def form_valid(self, form: "forms.PatternBulkUpdateForm") -> "HttpResponseRedirect":
+    def form_valid(  # pylint: disable=too-many-locals
+        self, form: "forms.PatternBulkUpdateForm",
+    ) -> "HttpResponseRedirect":
         # Read the CSV into a DataFrame
         path = self.request.FILES["csv"]
         try:
@@ -544,7 +547,7 @@ class PatternBulkUpdate(LoginRequiredMixin, FormView):
         for __, row in df.iterrows():
             if row.Category not in cat_objs:
                 continue
-            pattern, created = models.Pattern.objects.get_or_create(
+            _, created = models.Pattern.objects.get_or_create(
                 user=self.request.user,
                 pattern=row.Pattern,
                 defaults={"category": cat_objs[row.Category]},

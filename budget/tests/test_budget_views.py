@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.test import Client
 
-    from budget import models
+    from budget import models  # pylint: disable=reimported
 
 TEST_NAME = "Scooby Doo"
 RAND_FILE_NAME_LENGTH = 20
@@ -693,7 +693,7 @@ class TestCreateViews:
 
 class TestUpdateViews:
     @staticmethod
-    def update_view_test(
+    def update_view_test(  # pylint: disable=too-many-locals
         client,
         model,
         url,

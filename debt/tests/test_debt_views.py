@@ -194,8 +194,8 @@ class TestStatementBulkUpdateView:
             assert acc.balance == 3000
             assert acc.statement_set.count() == 2
             assert (
-                4500
-                == acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                == 4500
             )
             assert acc.latest_statement_date == datetime.date(2018, 12, 1)
 
@@ -228,8 +228,8 @@ class TestStatementBulkUpdateView:
             assert acc.balance == 3000
             assert acc.statement_set.count() == 2
             assert (
-                5000
-                == acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                == 5000
             )
             assert acc.latest_statement_date == datetime.date(2018, 12, 1)
 
@@ -430,7 +430,7 @@ class TestCreateViews:
 
 class TestUpdateViews:
     @staticmethod
-    def update_view_test(
+    def update_view_test(  # pylint: disable=too-many-locals
         client,
         model,
         url,
@@ -649,7 +649,7 @@ class TestCreditLineBulkUpdateView:
         assert model.objects.count() == 0
 
         # Create an existing account
-        existing_acc = mommy.make(model, name="CreditCard", user=user, annual_fee=200)
+        _ = mommy.make(model, name="CreditCard", user=user, annual_fee=200)
         assert model.objects.count() == 1
 
         # Create the CSV

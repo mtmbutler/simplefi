@@ -1,4 +1,3 @@
-import datetime
 from typing import TYPE_CHECKING, Type
 
 from model_mommy import mommy

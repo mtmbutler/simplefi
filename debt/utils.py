@@ -2,7 +2,6 @@ import calendar
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Union
 
-from django.http import HttpRequest
 from django.utils import timezone
 
 from budget.models import Budget
@@ -13,6 +12,7 @@ if TYPE_CHECKING:
 
     from django.contrib.auth.models import User
     from django.db.models import QuerySet
+    from django.http import HttpRequest
 
 
 def get_debt_budget(user: "User") -> Union["Budget", None]:
@@ -23,7 +23,7 @@ def get_debt_budget(user: "User") -> Union["Budget", None]:
         return None
 
 
-class DebtSummaryTable:
+class DebtSummaryTable:  # pylint: disable=too-many-instance-attributes
     MAX_ROWS = 120
 
     def __init__(self, request: "HttpRequest", do_forecasting: bool = False):
@@ -140,9 +140,8 @@ class DebtSummaryTable:
                     if row[name] >= budget:
                         row[name] -= budget
                         break
-                    else:
-                        budget -= row[name]
-                        row[name] = 0
+                    budget -= row[name]
+                    row[name] = 0
 
         # Add total column
         row.update(Total=sum(row.values()))

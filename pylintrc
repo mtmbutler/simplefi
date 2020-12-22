@@ -1,6 +1,7 @@
 [MASTER]
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
+ignore=migrations
 ignore-patterns=venv/
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
@@ -96,3 +97,14 @@ disable=print-statement,
         exception-escape,
         comprehension-escape,
         invalid-name,
+        missing-function-docstring,
+        missing-class-docstring,
+        missing-module-docstring,
+        too-few-public-methods,
+        too-many-ancestors,
+        no-self-use,
+        ungrouped-imports,
+        protected-access,
+        too-many-arguments,
+        no-member,
+        import-error
