@@ -13,6 +13,7 @@ Optional environment variables:
 # pylint: disable=wildcard-import,unused-wildcard-import
 from .base import *
 
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = True
 ALLOWED_HOSTS = [os.environ["DJANGO_HOST"]]
 

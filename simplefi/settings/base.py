@@ -5,7 +5,6 @@ from django.contrib.messages import constants as msg_const
 from django.urls import reverse_lazy
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # Application definition
 LOGIN_URL = reverse_lazy("login")
