@@ -21,12 +21,12 @@ if TYPE_CHECKING:
 
     from budget.models import (
         Account,
+        Category,
+        CSVBackup,
         Pattern,
         Transaction,
-        CSVBackup,
-        Upload,
         TransactionClass,
-        Category,
+        Upload,
     )
 
 TEST_NAME = "Scooby Doo"
