@@ -78,7 +78,7 @@ class TestStatementBulkDownloadView:
         url = reverse("debt:statement-download")
         login(client, django_user_model)
 
-        pattern = "Account,Date,Balance\r?\n"
+        pattern = "Account,Date,Balance\r?\r?\n"
         r = client.get(url)
         text = "".join(line.decode("UTF-8") for line in r.streaming_content)
         assert re.match(pattern, text)
@@ -95,7 +95,7 @@ class TestStatementBulkDownloadView:
             "debt.Statement", user=user, account=cl, year=2018, month=11, balance=20
         )
 
-        pattern = "Account,Date,Balance\r?\nChecking,2018-11-10,20.00"
+        pattern = "Account,Date,Balance\r?\r?\nChecking,2018-11-10,20.00"
         r = client.get(url)
         text = "".join(line.decode("UTF-8") for line in r.streaming_content)
         assert re.match(pattern, text)
@@ -194,8 +194,8 @@ class TestStatementBulkUpdateView:
             assert acc.balance == 3000
             assert acc.statement_set.count() == 2
             assert (
-                4500
-                == acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                == 4500
             )
             assert acc.latest_statement_date == datetime.date(2018, 12, 1)
 
@@ -228,8 +228,8 @@ class TestStatementBulkUpdateView:
             assert acc.balance == 3000
             assert acc.statement_set.count() == 2
             assert (
-                5000
-                == acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                acc.statement_set.aggregate(models.Sum("balance"))["balance__sum"]
+                == 5000
             )
             assert acc.latest_statement_date == datetime.date(2018, 12, 1)
 
@@ -430,7 +430,7 @@ class TestCreateViews:
 
 class TestUpdateViews:
     @staticmethod
-    def update_view_test(
+    def update_view_test(  # pylint: disable=too-many-locals
         client,
         model,
         url,
@@ -649,7 +649,7 @@ class TestCreditLineBulkUpdateView:
         assert model.objects.count() == 0
 
         # Create an existing account
-        existing_acc = mommy.make(model, name="CreditCard", user=user, annual_fee=200)
+        _ = mommy.make(model, name="CreditCard", user=user, annual_fee=200)
         assert model.objects.count() == 1
 
         # Create the CSV

@@ -2,28 +2,29 @@
 
 import datetime
 import os
-import subprocess
+import subprocess  # nosec
 import sys
 
-# Define paths
-repo_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-manage_path = os.path.join(repo_dir, "manage.py")
-datestr = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-out_path = os.path.join(repo_dir, "fixtures", f"data_{datestr}.json")
+if __name__ == "__main__":
+    # Define paths
+    repo_dir = os.path.join(os.path.dirname(__file__), os.pardir)
+    manage_path = os.path.join(repo_dir, "manage.py")
+    datestr = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+    out_path = os.path.join(repo_dir, "fixtures", f"data_{datestr}.json")
 
-# Run django-admin's dumpdata with proper args
-subprocess.call(
-    [
-        sys.executable,
-        manage_path,
-        "dumpdata",
-        "--format=json",
-        "--indent=2",
-        "--exclude=admin",
-        # '--exclude=auth',
-        "--exclude=contenttypes",
-        "--exclude=sessions",
-        "--verbosity=1",
-        f"--output={out_path}",
-    ]
-)
+    # Run django-admin's dumpdata with proper args
+    subprocess.call(  # nosec
+        [
+            sys.executable,
+            manage_path,
+            "dumpdata",
+            "--format=json",
+            "--indent=2",
+            "--exclude=admin",
+            # '--exclude=auth',
+            "--exclude=contenttypes",
+            "--exclude=sessions",
+            "--verbosity=1",
+            f"--output={out_path}",
+        ]
+    )

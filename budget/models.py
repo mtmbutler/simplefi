@@ -1,12 +1,12 @@
 import csv
 import datetime
 import os
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
 from django.conf import settings
-from django.db import models, IntegrityError
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, models
 from django.http import FileResponse
 from django.urls import reverse
 from django.utils import timezone
@@ -47,7 +47,7 @@ class Account(UserDataModel):
     class Meta:
         unique_together = ("user", "name")
 
-    def __str__(self):
+    def __str__(self):  # pylint: disable=invalid-str-returned
         return self.name
 
     def get_absolute_url(self) -> str:
@@ -74,7 +74,7 @@ class Upload(UserDataModel):
 
     def __str__(self):
         return self.upload_time.astimezone(timezone.get_current_timezone()).strftime(
-            "%d %b %Y - %-I:%M %p"
+            "%d %b %Y - %I:%M %p"
         )
 
     def get_absolute_url(self) -> str:
@@ -109,7 +109,7 @@ class Upload(UserDataModel):
 
         # Create transaction objects
         err = None
-        for i, r in df.iterrows():
+        for _, r in df.iterrows():
             t = Transaction(
                 user=self.user,
                 upload=self,
@@ -201,7 +201,7 @@ class Category(UserDataModel):
         ordering = ["class_field_id", "name"]
         verbose_name_plural = "categories"
 
-    def __str__(self):
+    def __str__(self):  # pylint: disable=invalid-str-returned
         return self.name
 
     def get_absolute_url(self) -> str:
@@ -223,7 +223,7 @@ class Pattern(UserDataModel):
     class Meta:
         unique_together = ("user", "pattern")
 
-    def __str__(self):
+    def __str__(self):  # pylint: disable=invalid-str-returned
         return self.pattern
 
     @property
@@ -237,7 +237,7 @@ class Pattern(UserDataModel):
     def get_absolute_url(self) -> str:
         return reverse("budget:pattern-detail", kwargs={"pk": self.pk})
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):  # pylint: disable=signature-differs
         super().save(*args, **kwargs)
         self.match_transactions()
 
@@ -288,10 +288,14 @@ class Transaction(UserDataModel):
     def trunc_desc(self) -> str:
         if not self.description:
             return ""
-        elif len(self.description) <= self.DESC_TRUNC_LEN:
+        if len(self.description) <= self.DESC_TRUNC_LEN:
             return self.description
-        else:
-            return self.description[: self.DESC_TRUNC_LEN] + "..."
+        return (
+            self.description[  # pylint: disable=unsubscriptable-object
+                : self.DESC_TRUNC_LEN
+            ]
+            + "..."
+        )
 
 
 class CSVBackup(UserDataModel):

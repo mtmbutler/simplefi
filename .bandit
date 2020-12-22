@@ -1,0 +1,2 @@
+[bandit]
+exclude: ./venv,./budget/tests,./debt/tests

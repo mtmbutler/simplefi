@@ -3,7 +3,7 @@ import math
 import os
 import random
 import string
-from typing import Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 import pandas as pd
 from django.apps import apps
@@ -19,7 +19,15 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.test import Client
 
-    from budget import models
+    from budget.models import (
+        Account,
+        Category,
+        CSVBackup,
+        Pattern,
+        Transaction,
+        TransactionClass,
+        Upload,
+    )
 
 TEST_NAME = "Scooby Doo"
 RAND_FILE_NAME_LENGTH = 20
@@ -79,10 +87,8 @@ class TestPatternClassificationViews:
 
         # Setup
         user = login(client, django_user_model)
-        pat_model = apps.get_model("budget.Pattern")  # type: Type[models.Pattern]
-        tr_model = apps.get_model(
-            "budget.Transaction"
-        )  # type: Type[models.Transaction]
+        pat_model = apps.get_model("budget.Pattern")  # type: Type[Pattern]
+        tr_model = apps.get_model("budget.Transaction")  # type: Type[Transaction]
         assert pat_model.objects.count() == 0
         assert tr_model.objects.count() == 0
 
@@ -90,11 +96,9 @@ class TestPatternClassificationViews:
         for i in range(3):
             mommy.make(
                 tr_model, user=user, description=f"transaction {i}", pattern=None
-            )  # type: models.Transaction
+            )  # type: Transaction
         assert tr_model.objects.count() == 3
-        pat = mommy.make(
-            pat_model, user=user, pattern="transaction.*"
-        )  # type: models.Pattern
+        pat = mommy.make(pat_model, user=user, pattern="transaction.*")  # type: Pattern
         assert pat_model.objects.count() == 1
 
         # GET the view and check that the pattern associated
@@ -107,22 +111,18 @@ class TestPatternClassificationViews:
 
         # Setup
         user = login(client, django_user_model)
-        pat_model = apps.get_model("budget.Pattern")  # type: Type[models.Pattern]
-        tr_model = apps.get_model(
-            "budget.Transaction"
-        )  # type: Type[models.Transaction]
+        pat_model = apps.get_model("budget.Pattern")  # type: Type[Pattern]
+        tr_model = apps.get_model("budget.Transaction")  # type: Type[Transaction]
         assert pat_model.objects.count() == 0
         assert tr_model.objects.count() == 0
 
         # Make some transactions and a pattern
-        pat = mommy.make(
-            pat_model, user=user, pattern="transaction.*"
-        )  # type: models.Pattern
+        pat = mommy.make(pat_model, user=user, pattern="transaction.*")  # type: Pattern
         assert pat_model.objects.count() == 1
         for i in range(3):
             mommy.make(
                 tr_model, user=user, description=f"transaction {i}", pattern=pat
-            )  # type: models.Transaction
+            )  # type: Transaction
         assert tr_model.objects.count() == 3
         assert pat.num_transactions == 3
 
@@ -199,13 +199,11 @@ class TestBackupViews:
 
         # Setup
         user = login(client, django_user_model)
-        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[models.CSVBackup]
+        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[CSVBackup]
         assert bak_model.objects.count() == 0
 
         # Make some transactions
-        tr_model = apps.get_model(
-            "budget.Transaction"
-        )  # type: Type[models.Transaction]
+        tr_model = apps.get_model("budget.Transaction")  # type: Type[Transaction]
         assert tr_model.objects.count() == 0
         mommy.make(tr_model, user=user, amount=5.54)
         mommy.make(tr_model, user=user, amount=3.99)
@@ -215,7 +213,7 @@ class TestBackupViews:
         r = client.post(reverse(url))
         assert r.status_code == 302
         assert bak_model.objects.count() == 1
-        obj = bak_model.objects.first()  # type: models.CSVBackup
+        obj = bak_model.objects.first()  # type: CSVBackup
 
         try:
             # Check that the transactions are in the CSV
@@ -241,13 +239,11 @@ class TestBackupViews:
 
         # Setup
         user = login(client, django_user_model)
-        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[models.CSVBackup]
+        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[CSVBackup]
         assert bak_model.objects.count() == 0
 
         # Make some transactions
-        tr_model = apps.get_model(
-            "budget.Transaction"
-        )  # type: Type[models.Transaction]
+        tr_model = apps.get_model("budget.Transaction")  # type: Type[Transaction]
         assert tr_model.objects.count() == 0
         mommy.make(tr_model, user=user, amount=5.54)
         mommy.make(tr_model, user=user, amount=3.99)
@@ -262,7 +258,7 @@ class TestBackupViews:
         # Setup
         url = "budget:backup-download"
         user = login(client, django_user_model)
-        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[models.CSVBackup]
+        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[CSVBackup]
         assert bak_model.objects.count() == 0
 
         # Make a fake file
@@ -286,12 +282,10 @@ class TestBackupViews:
         # Setup
         url = "budget:backup-restore"
         user = login(client, django_user_model)
-        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[models.CSVBackup]
-        tr_model = apps.get_model(
-            "budget.Transaction"
-        )  # type: Type[models.Transaction]
-        acc_model = apps.get_model("budget.Account")  # type: Type[models.Account]
-        ul_model = apps.get_model("budget.Upload")  # type: Type[models.Upload]
+        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[CSVBackup]
+        tr_model = apps.get_model("budget.Transaction")  # type: Type[Transaction]
+        acc_model = apps.get_model("budget.Account")  # type: Type[Account]
+        ul_model = apps.get_model("budget.Upload")  # type: Type[Upload]
         for model in (bak_model, tr_model, acc_model, ul_model):
             assert model.objects.count() == 0
 
@@ -339,7 +333,7 @@ class TestBackupViews:
         # Setup
         url = "budget:backup-restore"
         user = login(client, django_user_model)
-        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[models.CSVBackup]
+        bak_model = apps.get_model("budget.CSVBackup")  # type: Type[CSVBackup]
         assert bak_model.objects.count() == 0
 
         # Create the backup object w/ no CSV and try to restore
@@ -643,8 +637,8 @@ class TestCreateViews:
         # Setup
         url = "budget:upload-add"
         user = login(client, django_user_model)
-        acc_model = apps.get_model("budget.Account")  # type: Type[models.Account]
-        ul_model = apps.get_model("budget.Upload")  # type: Type[models.Upload]
+        acc_model = apps.get_model("budget.Account")  # type: Type[Account]
+        ul_model = apps.get_model("budget.Upload")  # type: Type[Upload]
         assert acc_model.objects.count() == 0
         acc = mommy.make(acc_model, user=user)
         assert acc_model.objects.count() == 1
@@ -693,7 +687,7 @@ class TestCreateViews:
 
 class TestUpdateViews:
     @staticmethod
-    def update_view_test(
+    def update_view_test(  # pylint: disable=too-many-locals
         client,
         model,
         url,
@@ -769,11 +763,11 @@ class TestUpdateViews:
         # Create the dependency object
         cls_model = apps.get_model(
             "budget.TransactionClass"
-        )  # type: Type[models.TransactionClass]
+        )  # type: Type[TransactionClass]
         cls = mommy.make(cls_model)
 
         # Create the object
-        model = apps.get_model("budget.Category")  # type: Type[models.Category]
+        model = apps.get_model("budget.Category")  # type: Type[Category]
         assert model.objects.count() == 0
         cat = mommy.make(model, user=user, name="OrigName", class_field=cls)
         url = reverse(url_pattern, kwargs={"pk": cat.pk})
@@ -796,11 +790,11 @@ class TestUpdateViews:
         user = login(client, django_user_model)
 
         # Create the dependency object
-        cat_model = apps.get_model("budget.Category")  # type: Type[models.Category]
+        cat_model = apps.get_model("budget.Category")  # type: Type[Category]
         cat = mommy.make(cat_model)
 
         # Create the object
-        model = apps.get_model("budget.Pattern")  # type: Type[models.Pattern]
+        model = apps.get_model("budget.Pattern")  # type: Type[Pattern]
         assert model.objects.count() == 0
         pat = mommy.make(model, user=user, pattern="OrigPattern", category=cat)
         url = reverse(url_pattern, kwargs={"pk": pat.pk})

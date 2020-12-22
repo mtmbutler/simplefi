@@ -39,6 +39,7 @@ class CreditLineTable(tables.Table):
 
 
 def linkify_statement(acc_name: str, mo_yr: str) -> str:
+    url = None
     model = apps.get_model("debt.Statement")
     dt = datetime.datetime.strptime(mo_yr, "%b %Y")
 
@@ -46,7 +47,8 @@ def linkify_statement(acc_name: str, mo_yr: str) -> str:
         account__name=acc_name, month=dt.month, year=dt.year
     ).first()
     if statement:
-        return statement.get_absolute_url()
+        url = statement.get_absolute_url()
+    return url
 
 
 class SummaryTable(tables.Table):

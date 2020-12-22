@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
-from budget.models import TransactionClass, Budget
+from budget.models import Budget, TransactionClass
 
 
 class Command(BaseCommand):

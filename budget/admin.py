@@ -1,13 +1,13 @@
 from django.contrib import admin
 
 from .models import (
-    Budget,
     Account,
-    Upload,
-    TransactionClass,
+    Budget,
     Category,
     Pattern,
     Transaction,
+    TransactionClass,
+    Upload,
 )
 
 admin.site.register(

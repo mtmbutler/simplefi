@@ -10,8 +10,10 @@ Mandatory environment variables:
 Optional environment variables:
  - DATABASE_URL (defaults to sqlite3)
 """
+# pylint: disable=wildcard-import,unused-wildcard-import
 from .base import *
 
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = False
 ALLOWED_HOSTS = [os.environ["DJANGO_HOST"]]
 

@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from django import forms
 
-from budget.models import Category, Pattern
+from budget.models import Pattern
+
+if TYPE_CHECKING:
+    from budget.models import Category
 
 
 class UploadFileForm(forms.Form):

@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict, List, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Union
 
 import pandas as pd
 from django.apps import apps

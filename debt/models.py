@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from typing import Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple, Union
 
 from django.conf import settings
 from django.db import models
@@ -47,15 +47,14 @@ class CreditLine(UserDataModel):
     class Meta:
         unique_together = ("user", "name")
 
-    def __str__(self):
+    def __str__(self):  # pylint: disable=invalid-str-returned
         return self.name
 
     @property
     def balance(self) -> "Decimal":
         if self.statement_set.exists():
             return self.statement_set.order_by("year", "month").last().balance
-        else:
-            return self.credit_line
+        return self.credit_line
 
     @property
     def available_credit(self) -> "Decimal":
@@ -65,15 +64,13 @@ class CreditLine(UserDataModel):
     def earliest_statement_date(self) -> Union["date", None]:
         if self.statement_set.exists():
             return self.statement_set.order_by("year", "month").first().date
-        else:
-            return None
+        return None
 
     @property
     def latest_statement_date(self) -> Union["date", None]:
         if self.statement_set.exists():
             return self.statement_set.order_by("year", "month").last().date
-        else:
-            return None
+        return None
 
     def get_absolute_url(self) -> str:
         return reverse("debt:account-detail", kwargs={"pk": self.pk})
