@@ -41,7 +41,7 @@ class TestBackups:
                 lines = list(f.readlines())
 
             # No transactions, so should just be header
-            assert len(lines) == 1
+            assert len([ln for ln in lines if ln != "\n"]) == 1
             assert lines[0] == "Account,Class,Category,Date,Amount,Description\n"
 
         finally:

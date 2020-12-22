@@ -82,7 +82,7 @@ class BackupTable(tables.Table):
 class UploadTable(tables.Table):
     account = tables.Column(
         accessor="account",
-        linkify=("budget:account-detail", {"pk": tables.A("account.pk")}),
+        linkify=("budget:account-detail", {"pk": tables.A("account__pk")}),
     )
     upload = tables.Column(
         accessor="__str__",
@@ -103,7 +103,7 @@ class UploadTable(tables.Table):
 class ClassTable(tables.Table):
     class_ = tables.Column(
         accessor="class_field",
-        linkify=("budget:class-detail", {"pk": tables.A("class_field.pk")}),
+        linkify=("budget:class-detail", {"pk": tables.A("class_field__pk")}),
     )
     budget = tables.Column(
         verbose_name="Budget",
@@ -132,7 +132,7 @@ class CategoryFilter(filters.FilterSet):
 class CategoryTable(tables.Table):
     class_ = tables.Column(
         accessor="class_field",
-        linkify=("budget:class-detail", {"pk": tables.A("class_field.pk")}),
+        linkify=("budget:class-detail", {"pk": tables.A("class_field__pk")}),
     )
     name = tables.Column(
         verbose_name="Category",
@@ -163,12 +163,12 @@ class PatternTable(tables.Table):
     class_ = tables.Column(
         accessor="class_field",
         orderable=False,
-        linkify=("budget:class-detail", {"pk": tables.A("class_field.pk")}),
+        linkify=("budget:class-detail", {"pk": tables.A("class_field__pk")}),
     )
     category = tables.Column(
         accessor="category",
         orderable=False,
-        linkify=("budget:category-detail", {"pk": tables.A("category.pk")}),
+        linkify=("budget:category-detail", {"pk": tables.A("category__pk")}),
     )
     pattern = tables.Column(
         verbose_name="Pattern",
@@ -207,22 +207,22 @@ class TransactionTable(tables.Table):
     account = tables.Column(
         accessor="account",
         orderable=False,
-        linkify=("budget:account-detail", {"pk": tables.A("account.pk")}),
+        linkify=("budget:account-detail", {"pk": tables.A("account__pk")}),
     )
     class_ = tables.Column(
         accessor="class_field",
         orderable=False,
-        linkify=("budget:class-detail", {"pk": tables.A("class_field.pk")}),
+        linkify=("budget:class-detail", {"pk": tables.A("class_field__pk")}),
     )
     category = tables.Column(
         accessor="category",
         orderable=False,
-        linkify=("budget:category-detail", {"pk": tables.A("category.pk")}),
+        linkify=("budget:category-detail", {"pk": tables.A("category__pk")}),
     )
     upload = tables.Column(
         accessor="upload",
         orderable=False,
-        linkify=("budget:upload-detail", {"pk": tables.A("upload.pk")}),
+        linkify=("budget:upload-detail", {"pk": tables.A("upload__pk")}),
     )
     date = tables.DateColumn(verbose_name="Date", accessor="date", format="d M Y")
     amount = tables.Column(
@@ -240,7 +240,7 @@ class TransactionTable(tables.Table):
         accessor="pattern",
         orderable=False,
         visible=False,
-        linkify=("budget:pattern-detail", {"pk": tables.A("pattern.pk")}),
+        linkify=("budget:pattern-detail", {"pk": tables.A("pattern__pk")}),
     )
 
     class Meta:

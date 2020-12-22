@@ -78,7 +78,7 @@ class TestStatementBulkDownloadView:
         url = reverse("debt:statement-download")
         login(client, django_user_model)
 
-        pattern = "Account,Date,Balance\r?\n"
+        pattern = "Account,Date,Balance\r?\r?\n"
         r = client.get(url)
         text = "".join(line.decode("UTF-8") for line in r.streaming_content)
         assert re.match(pattern, text)
@@ -95,7 +95,7 @@ class TestStatementBulkDownloadView:
             "debt.Statement", user=user, account=cl, year=2018, month=11, balance=20
         )
 
-        pattern = "Account,Date,Balance\r?\nChecking,2018-11-10,20.00"
+        pattern = "Account,Date,Balance\r?\r?\nChecking,2018-11-10,20.00"
         r = client.get(url)
         text = "".join(line.decode("UTF-8") for line in r.streaming_content)
         assert re.match(pattern, text)
