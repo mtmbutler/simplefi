@@ -174,7 +174,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"ordering": ["-year", "-month"],},
+            options={"ordering": ["-year", "-month"]},
         ),
         migrations.AlterUniqueTogether(
             name="statement", unique_together={("user", "account", "year", "month")},

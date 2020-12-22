@@ -35,18 +35,10 @@ jobs:
         run: |
           pip install flake8==3.8.4
           flake8 .
-      - name: Bandit
-        run: |
-          pip install bandit==1.6.2
-          bandit -r simplefi --ini .bandit
-          bandit -r budget --ini .bandit
-          bandit -r debt --ini .bandit
       - name: Pylint
         run: |
           pip install pylint==2.6.0
-          pylint simplefi
-          pylint budget
-          pylint debt
+          pylint simplefi budget debt
       - name: Install dependencies
         run: |
           pip install .
