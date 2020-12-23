@@ -51,7 +51,9 @@ def safe_strftime(dt: Union["datetime", str], fmt: str) -> str:
     return dt.strftime(fmt)
 
 
-def oys_qs(user: "User", class_id: int = None) -> List[Dict[str, Union[str, int]]]:
+def oys_qs(  # pylint: disable=too-many-locals
+    user: "User", class_id: int = None
+) -> List[Dict[str, Union[str, int]]]:
     """The query set for a pivot table.
 
     The columns are always month/year combinations, i.e. Aug 2000,
@@ -64,6 +66,8 @@ def oys_qs(user: "User", class_id: int = None) -> List[Dict[str, Union[str, int]
     """
     Transaction = apps.get_model("budget.Transaction")
     Budget = apps.get_model("budget.Budget")
+    TransactionClass = apps.get_model("budget.TransactionClass")
+    Category = apps.get_model("budget.Category")
 
     if class_id is None:
         base_qs = Transaction.objects.in_last_thirteen_months(user)
@@ -90,6 +94,17 @@ def oys_qs(user: "User", class_id: int = None) -> List[Dict[str, Union[str, int]
 
     # Pivot
     piv = pd.DataFrame(grp_qs).pivot(index=ix, values="s", columns="month")
+
+    # Gapfill
+    if class_id is None:
+        qs_miss = TransactionClass.objects.exclude(name__in=list(piv.index))
+    else:
+        qs_miss = Category.objects.filter(class_field_id=class_id).exclude(
+            name__in=list(piv.index)
+        )
+    for obj in qs_miss.all():
+        piv.loc[obj.name] = 0
+    piv = piv.sort_index()
 
     # Add budget col and title-ify index if in class mode
     if class_id is None:
