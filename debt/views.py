@@ -170,7 +170,7 @@ class CreditLineBulkUpdate(LoginRequiredMixin, generic.FormView):
                 path,
                 usecols=self.cols,
                 infer_datetime_format=True,
-                parse_dates=["statement_date"],
+                parse_dates=["date_opened"],
             )
         except ValueError as e:
             messages.error(self.request, f"Restore failed: {e}")
